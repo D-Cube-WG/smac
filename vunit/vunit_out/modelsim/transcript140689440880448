@@ -1,0 +1,29 @@
+# do /home/hguler/.local/lib/python3.8/site-packages/vunit/sim_if/tcl_read_eval_loop.tcl
+# vsim -modelsimini /home/hguler/vunit_projects/smac/vunit/vunit_out/modelsim/modelsim.ini -wlf /home/hguler/vunit_projects/smac/vunit/vunit_out/test_output/my_lib.tb_smac.test_0_50eab1c9cc20e7c5ee9daecb8489175abda8e0c8/modelsim/vsim.wlf -quiet -t ps -onfinish stop my_lib.tb_smac(tb) -L vunit_lib -L my_lib -g/tb_smac/runner_cfg="active python runner : true,enabled_test_cases : test_0,output path : /home/hguler/vunit_projects/smac/vunit/vunit_out/test_output/my_lib.tb_smac.test_0_50eab1c9cc20e7c5ee9daecb8489175abda8e0c8/,tb path : /home/hguler/vunit_projects/smac/tb/,use_color : true" 
+# Start time: 20:40:17 on Jan 02,2026
+# //  ModelSim Microsemi Pro 2024.3 Sep 11 2024 Linux 5.15.0-139-generic
+# //
+# // Unpublished work. Copyright 2024 Siemens
+# //
+# // This material contains trade secrets or otherwise confidential information
+# // owned by Siemens Industry Software Inc. or its affiliates (collectively,
+# // "SISW"), or its licensors. Access to and use of this information is strictly
+# // limited as set forth in the Customer's applicable agreements with SISW.
+# //
+# // This material may not be copied, distributed, or otherwise disclosed outside
+# // of the Customer's facilities without the express written permission of SISW,
+# // and may not be used in any way not expressly authorized by SISW.
+# //
+#        [22;96;49m105000 ps[0m - [1;37;49mdefault[0m              -    [1;37;49mINFO[0m - d : 9
+#        [22;96;49m105000 ps[0m - [1;37;49mdefault[0m              -    [1;37;49mINFO[0m - BEFORE INIT | a1 : 00000000000000000000000000000000 | a2 : 00000000000000000000000000000000 | a3 : 00000000000000000000000000000000
+#        [22;96;49m105000 ps[0m - [1;37;49mdefault[0m              -    [1;37;49mINFO[0m - AFTER INIT | a1 : FA4E8BBA5BA379BE90A7EED80012035B | a2 : 8C99E70195BA79B6E13F0F566AD45C60 | a3 : 59EC45581DA5089EE4AD8E4DE2DAB108
+#        [22;96;49m105000 ps[0m - [1;37;49mdefault[0m              -    [1;37;49mINFO[0m - d : 1
+#        [22;96;49m105000 ps[0m - [1;37;49mdefault[0m              -    [1;37;49mINFO[0m - BEFORE COMPRESSION PHASE | a1 : FA4E8BBA5BA379BE90A7EED80012035B | a2 : 8C99E70195BA79B6E13F0F566AD45C60 | a3 : 59EC45581DA5089EE4AD8E4DE2DAB108
+#        [22;96;49m105000 ps[0m - [1;37;49mdefault[0m              -    [1;37;49mINFO[0m - AFTER COMPRESSION PHASE | a1 : D528ED1B880E817505687159881FA292 | a2 : 55783C2719F8949F13003A13609D98FE | a3 : 69DD1795FD624FB9E98151532AB55327
+#        [22;96;49m105000 ps[0m - [1;37;49mdefault[0m              -    [1;37;49mINFO[0m - d : 9
+#        [22;96;49m105000 ps[0m - [1;37;49mdefault[0m              -    [1;37;49mINFO[0m - BEFORE INIT | a1 : D528ED1B880E817505687159881FA292 | a2 : 55783C2719F8949F13003A13609D98FE | a3 : 69DD1795FD624FB9E98151532AB55327
+#        [22;96;49m105000 ps[0m - [1;37;49mdefault[0m              -    [1;37;49mINFO[0m - AFTER INIT | a1 : AA8C5831E0CE879108B7C2631E2E9BF9 | a2 : D82C49EA4681CA1FBA9793495F9A6085 | a3 : 39CEBE8612C80F7060CF18412E9892EE
+# Break in Subprogram stop at /home/hguler/.local/lib/python3.8/site-packages/vunit/vhdl/core/src/stop_body_2008p.vhd line 13
+# Stopped at /home/hguler/.local/lib/python3.8/site-packages/vunit/vhdl/core/src/stop_body_2008p.vhd line 13
+# End time: 20:40:17 on Jan 02,2026, Elapsed time: 0:00:00
+# Errors: 0, Warnings: 0

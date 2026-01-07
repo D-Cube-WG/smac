@@ -1,0 +1,70 @@
+# Reading pref.tcl
+# source "/home/hguler/vunit_projects/smac/vunit/vunit_out/test_output/my_lib.tb_smac.test_0_50eab1c9cc20e7c5ee9daecb8489175abda8e0c8/modelsim/gui.do"
+# vsim -modelsimini /home/hguler/vunit_projects/smac/vunit/vunit_out/modelsim/modelsim.ini -wlf /home/hguler/vunit_projects/smac/vunit/vunit_out/test_output/my_lib.tb_smac.test_0_50eab1c9cc20e7c5ee9daecb8489175abda8e0c8/modelsim/vsim.wlf -quiet -t ps -onfinish stop my_lib.tb_smac(tb) -L vunit_lib -L my_lib -g/tb_smac/runner_cfg="active python runner : true,enabled_test_cases : test_0,output path : /home/hguler/vunit_projects/smac/vunit/vunit_out/test_output/my_lib.tb_smac.test_0_50eab1c9cc20e7c5ee9daecb8489175abda8e0c8/,tb path : /home/hguler/vunit_projects/smac/tb/,use_color : false" 
+# Start time: 23:30:17 on Jan 07,2026
+# //  ModelSim Microsemi Pro 2024.3 Sep 11 2024 Linux 5.15.0-139-generic
+# //
+# // Unpublished work. Copyright 2024 Siemens
+# //
+# // This material contains trade secrets or otherwise confidential information
+# // owned by Siemens Industry Software Inc. or its affiliates (collectively,
+# // "SISW"), or its licensors. Access to and use of this information is strictly
+# // limited as set forth in the Customer's applicable agreements with SISW.
+# //
+# // This material may not be copied, distributed, or otherwise disclosed outside
+# // of the Customer's facilities without the express written permission of SISW,
+# // and may not be used in any way not expressly authorized by SISW.
+# //
+# List of VUnit commands:
+# vunit_help
+#   - Prints this help
+# vunit_load [vsim_extra_args]
+#   - Load design with correct generics for the test
+#   - Optional first argument are passed as extra flags to vsim
+# vunit_user_init
+#   - Re-runs the user defined init file
+# vunit_run
+#   - Run test, must do vunit_load first
+# vunit_compile
+#   - Recompiles the source files
+# vunit_restart
+#   - Recompiles the source files
+#   - and re-runs the simulation if the compile was successful
+run -all
+#        105000 ps - default              -    INFO - == TEST 1 ==
+#        105000 ps - default              -    INFO - KEY : 0000000000000000000000000000000000000000000000000000000000000000
+#        105000 ps - default              -    INFO - IV  : 00000000000000000000000000000000
+#        105000 ps - default              -    INFO - AD  : null
+#        105000 ps - default              -    INFO - CP  : null
+#        105000 ps - default              -    INFO - For SMAC-1:
+#        105000 ps - default              -    INFO - AFTER INIT/FINAL        | a1 : FA4E8BBA5BA379BE90A7EED80012035B | a2 : 8C99E70195BA79B6E13F0F566AD45C60 | a3 : 59EC45581DA5089EE4AD8E4DE2DAB108
+#        105000 ps - default              -    INFO - AFTER COMPRESSION PHASE | a1 : D528ED1B880E817505687159881FA292 | a2 : 55783C2719F8949F13003A13609D98FE | a3 : 69DD1795FD624FB9E98151532AB55327
+#        105000 ps - default              -    INFO - AFTER INIT/FINAL        | a1 : AA8C5831E0CE879108B7C2631E2E9BF9 | a2 : D82C49EA4681CA1FBA9793495F9A6085 | a3 : 39CEBE8612C80F7060CF18412E9892EE
+#        105000 ps - default              -    INFO - == TEST 2 ==
+#        105000 ps - default              -    INFO - KEY : 0100000000000000000000000000000000000000000000000000000000000000
+#        105000 ps - default              -    INFO - IV  : 02000000000000000000000000000000
+#        105000 ps - default              -    INFO - AD  : 03
+#        105000 ps - default              -    INFO - CP  : null
+#        105000 ps - default              -    INFO - For SMAC-1:
+#        105000 ps - default              -    INFO - AFTER INIT/FINAL        | a1 : 42E3C1DFBD969FA104029A30C493FA26 | a2 : 3AFCC4B71045505EB1D10949F9D6DE13 | a3 : 25C5FFC2AB2B5B156243FCF0E56ABE33
+#        105000 ps - default              -    INFO - AFTER COMPRESSION PHASE | a1 : 61DC6ED4A760661104C3C0A75E45BEA8 | a2 : E0647E6FB9F478DCB43A74C1964D44CB | a3 : 4834ED2458AFA3E29D2E4CAC5B100752
+#        105000 ps - default              -    INFO - AFTER INIT/FINAL        | a1 : 130E942C5B1F89235EC69AC077F69C91 | a2 : A13523DF2837EDD80F6B56AA611780B3 | a3 : 8A7B4BE48F4B4BDEB7D5AF8C826D816D
+#        105000 ps - default              -    INFO - == TEST 3 ==
+#        105000 ps - default              -    INFO - KEY : B0B1B2B3B4B5B6B7B8B9BABBBCBDBEBFC0C1C2C3C4C5C6C7C8C9CACBCCCDCECF
+#        105000 ps - default              -    INFO - IV  : D0D1D2D3D4D5D6D7D8D9DADBDCDDDEDF
+#        105000 ps - default              -    INFO - AD  : e0e1e2e3e4e5e6e7e8e9eaebecdddeef
+#        105000 ps - default              -    INFO - CP  : f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff
+#        105000 ps - default              -    INFO - For SMAC-1:
+#        105000 ps - default              -    INFO - AFTER INIT/FINAL        | a1 : DB1D65DE28122317158DAB00045F225C | a2 : E111BC2BC547D01915836F951F475F84 | a3 : 00917CC966F0F38407B26D48CF7C06F8
+#        105000 ps - default              -    INFO - AFTER COMPRESSION PHASE | a1 : 0F0F184B4A3A250AEFB38201CE2C599C | a2 : 0F1A78A3A9A90063E821F0ED82528012 | a3 : 56B8B17F40BFA916E95A199FDDB99860
+#        105000 ps - default              -    INFO - AFTER INIT/FINAL        | a1 : A9D26CF8C375B66FB528D3E28075B8CC | a2 : 613FAD899E9451481AEBD17A5C64DD18 | a3 : 9AC4AC2E1874A4E1CF9B42921538A9A1
+#        105000 ps - default              -    INFO - == TEST 4 ==
+#        105000 ps - default              -    INFO - KEY : 000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F
+#        105000 ps - default              -    INFO - IV  : FFFEFDFCFBFAF9F8F7F6F5F4F3F2F1F0
+#        105000 ps - default              -    INFO - AD  : 0102030405060708090a0b0c0d0e0f10111213
+#        105000 ps - default              -    INFO - CP  : 1415161718191a1b1c1d1e1f20
+#        105000 ps - default              -    INFO - For SMAC-1:
+#        105000 ps - default              -    INFO - AFTER INIT/FINAL        | a1 : 5CF14892AA701C6C0F7B8D57960C394B | a2 : EE3108258530FC598EA6C3EC572FDC59 | a3 : 45CC6D77D25628A9BE385A784BA1BA14
+#        105000 ps - default              -    INFO - AFTER COMPRESSION PHASE | a1 : 50622A64FC701B1D8E6D9F12DCF5B77C | a2 : D89D7B1468945974517460C756D2163F | a3 : 45734E188ED34DAE7831D3596BFA47C7
+#        105000 ps - default              -    INFO - AFTER INIT/FINAL        | a1 : 8298B1AB905476E42476B378D614E808 | a2 : C344521699482D93283C03EC7C3DB8B5 | a3 : C7776462168998EE280306F92533097C
+# Break in Subprogram stop at /home/hguler/.local/lib/python3.8/site-packages/vunit/vhdl/core/src/stop_body_2008p.vhd line 13
