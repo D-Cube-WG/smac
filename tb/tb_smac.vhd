@@ -62,7 +62,7 @@ architecture tb of tb_smac is
   ) return natural is
   begin
     return (a + b - 1) / b;
-  end function;
+  end function f_ceil;
 
   function f_swap_bytes(
     vec : std_logic_vector
@@ -287,10 +287,10 @@ architecture tb of tb_smac is
     --info("BEFORE COMPRESSION PHASE | ad : " & to_hstring(ad_i) & " | cp : " & to_hstring(cp_i));
 
     AD_BLOCKS : if (num_of_ad_bytes_i /= 0) then
-      v_ad_i := (v_ad_i'left downto v_ad_i'length - ad_i'length => ad_i, others => '0');
+      v_ad_i := (v_ad_i'left downto v_ad_i'length - ad_i'length => ad_i, others => '0'); --generating a vector that is multiple of the block size and padding the lsb with zeros
 
       for i in 0 to v_num_of_ad_blocks - 1 loop
-        v_m_block := v_ad_i(v_ad_i'left - i * C_SMAC_REG_WIDTH downto v_ad_i'length - (i + 1) * C_SMAC_REG_WIDTH); --generating a vector that is multiple of the block size and padding the lsb with zeros
+        v_m_block := v_ad_i(v_ad_i'left - i * C_SMAC_REG_WIDTH downto v_ad_i'length - (i + 1) * C_SMAC_REG_WIDTH);
         --info("v_m_block_ad  : " & to_hstring(v_m_block));
 
         f_smac_compression(permutation_array_i, v_a1_i, v_a2_i, v_a3_i, v_m_block, v_a1_o, v_a2_o, v_a3_o);

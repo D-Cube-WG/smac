@@ -114,7 +114,7 @@ package body pkg_aes is
             C_AES_SBOX(to_integer(unsigned(b)));
         end loop;
         return result;
-    end function;
+    end function f_sub_bytes;
 
     function f_shift_rows(state : std_logic_vector(127 downto 0))
         return std_logic_vector is
@@ -151,7 +151,7 @@ package body pkg_aes is
         end loop;
 
         return result;
-    end function;
+    end function f_shift_rows;
 
     function f_xtime(b : std_logic_vector(7 downto 0))
         return std_logic_vector is
@@ -161,19 +161,19 @@ package body pkg_aes is
         else
             return (b(6 downto 0) & '0');
         end if;
-    end function;
+    end function f_xtime;
 
     function f_gmul2(b : std_logic_vector(7 downto 0))
         return std_logic_vector is
     begin
         return f_xtime(b);
-    end function;
+    end function f_gmul2;
 
     function f_gmul3(b : std_logic_vector(7 downto 0))
         return std_logic_vector is
     begin
         return f_gmul2(b) xor b;
-    end function;
+    end function f_gmul3;
 
     function f_mix_columns(state : std_logic_vector(127 downto 0))
         return std_logic_vector is
@@ -208,7 +208,7 @@ package body pkg_aes is
         end loop;
 
         return result;
-    end function;
+    end function f_mix_columns;
 
     function f_add_round_key(
         state    : std_logic_vector(127 downto 0);
@@ -216,7 +216,7 @@ package body pkg_aes is
     ) return std_logic_vector is
     begin
         return state xor roundkey;
-    end function;
+    end function f_add_round_key;
 
     function f_aes_round(
         state    : std_logic_vector(127 downto 0);
@@ -237,6 +237,6 @@ package body pkg_aes is
         v_state := f_add_round_key(v_state, roundkey);
 
         return v_state;
-    end function;
+    end function f_aes_round;
 
 end package body pkg_aes;
