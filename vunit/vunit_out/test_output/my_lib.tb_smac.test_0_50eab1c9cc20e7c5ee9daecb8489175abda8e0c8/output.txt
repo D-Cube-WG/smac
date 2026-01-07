@@ -1,2 +1,2 @@
-skip (P=0 S=1 F=0 T=1) my_lib.tb_smac.test_0 (30.3 seconds)
-
+Support of the MGLS_LICENSE_FILE and LM_LICENSE_FILE licensing environment variables will be discontinued starting with the 2025.1 release. Please update to using the SALT_LICENSE_SERVER variable.
+Please contact Siemens EDA Customer Support (https://support.sw.siemens.com/) for assistance.

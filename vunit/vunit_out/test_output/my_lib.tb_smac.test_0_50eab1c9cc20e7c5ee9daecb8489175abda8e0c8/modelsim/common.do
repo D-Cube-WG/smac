@@ -43,11 +43,11 @@ proc _vunit_source_init_files_before_run {} {
 
 proc vunit_load {{vsim_extra_args ""}} {
     set vsim_failed [catch {
-        eval vsim ${vsim_extra_args} {-modelsimini /home/hguler/vunit_projects/smac/vunit/vunit_out/modelsim/modelsim.ini -wlf {/home/hguler/vunit_projects/smac/vunit/vunit_out/test_output/my_lib.tb_smac.test_0_50eab1c9cc20e7c5ee9daecb8489175abda8e0c8/modelsim/vsim.wlf} -quiet -t ps -onfinish stop  -g/tb_smac/runner_cfg={"active python runner : true,enabled_test_cases : test_0,output path : /home/hguler/vunit_projects/smac/vunit/vunit_out/test_output/my_lib.tb_smac.test_0_50eab1c9cc20e7c5ee9daecb8489175abda8e0c8/,tb path : /home/hguler/vunit_projects/smac/tb/,use_color : false"} my_lib.tb_smac(tb)   -L vunit_lib -L my_lib}
+        eval vsim ${vsim_extra_args} {-modelsimini /home/hguler/git_projects/smac/vunit/vunit_out/modelsim/modelsim.ini -wlf {/home/hguler/git_projects/smac/vunit/vunit_out/test_output/my_lib.tb_smac.test_0_50eab1c9cc20e7c5ee9daecb8489175abda8e0c8/modelsim/vsim.wlf} -quiet -t ps -onfinish stop  -g/tb_smac/runner_cfg={"active python runner : true,enabled_test_cases : test_0,output path : /home/hguler/git_projects/smac/vunit/vunit_out/test_output/my_lib.tb_smac.test_0_50eab1c9cc20e7c5ee9daecb8489175abda8e0c8/,tb path : /home/hguler/git_projects/smac/tb/,use_color : false"} my_lib.tb_smac(tb)   -L vunit_lib -L my_lib}
     }]
 
     if {${vsim_failed}} {
-       echo Command 'vsim ${vsim_extra_args} -modelsimini /home/hguler/vunit_projects/smac/vunit/vunit_out/modelsim/modelsim.ini -wlf {/home/hguler/vunit_projects/smac/vunit/vunit_out/test_output/my_lib.tb_smac.test_0_50eab1c9cc20e7c5ee9daecb8489175abda8e0c8/modelsim/vsim.wlf} -quiet -t ps -onfinish stop  -g/tb_smac/runner_cfg={"active python runner : true,enabled_test_cases : test_0,output path : /home/hguler/vunit_projects/smac/vunit/vunit_out/test_output/my_lib.tb_smac.test_0_50eab1c9cc20e7c5ee9daecb8489175abda8e0c8/,tb path : /home/hguler/vunit_projects/smac/tb/,use_color : false"} my_lib.tb_smac(tb)   -L vunit_lib -L my_lib' failed
+       echo Command 'vsim ${vsim_extra_args} -modelsimini /home/hguler/git_projects/smac/vunit/vunit_out/modelsim/modelsim.ini -wlf {/home/hguler/git_projects/smac/vunit/vunit_out/test_output/my_lib.tb_smac.test_0_50eab1c9cc20e7c5ee9daecb8489175abda8e0c8/modelsim/vsim.wlf} -quiet -t ps -onfinish stop  -g/tb_smac/runner_cfg={"active python runner : true,enabled_test_cases : test_0,output path : /home/hguler/git_projects/smac/vunit/vunit_out/test_output/my_lib.tb_smac.test_0_50eab1c9cc20e7c5ee9daecb8489175abda8e0c8/,tb path : /home/hguler/git_projects/smac/tb/,use_color : false"} my_lib.tb_smac(tb)   -L vunit_lib -L my_lib' failed
        echo Bad flag from vsim_extra_args?
        return true
     }
@@ -70,7 +70,7 @@ proc vunit_load {{vsim_extra_args ""}} {
 }
 
 proc is_test_suite_done {} {
-    set fd [open "/home/hguler/vunit_projects/smac/vunit/vunit_out/test_output/my_lib.tb_smac.test_0_50eab1c9cc20e7c5ee9daecb8489175abda8e0c8/vunit_results" "r"]
+    set fd [open "/home/hguler/git_projects/smac/vunit/vunit_out/test_output/my_lib.tb_smac.test_0_50eab1c9cc20e7c5ee9daecb8489175abda8e0c8/vunit_results" "r"]
     set contents [read $fd]
     close $fd
     set lines [split $contents "
@@ -117,7 +117,7 @@ proc vunit_compile {} {
     set cmd_show {/usr/bin/python3 -u run.py --compile -g}
     puts "Re-compiling using command ${cmd_show}"
 
-    set chan [open |[list {/usr/bin/python3} {-u} {-c} {import sys;import subprocess;exit(subprocess.call(['/usr/bin/python3', '-u', 'run.py', '--compile', '-g'], cwd='/home/hguler/vunit_projects/smac/vunit', bufsize=0, universal_newlines=True, stdout=sys.stdout, stderr=sys.stdout))}] r]
+    set chan [open |[list {/usr/bin/python3} {-u} {-c} {import sys;import subprocess;exit(subprocess.call(['/usr/bin/python3', '-u', 'run.py', '--compile', '-g'], cwd='/home/hguler/git_projects/smac/vunit', bufsize=0, universal_newlines=True, stdout=sys.stdout, stderr=sys.stdout))}] r]
 
     while {[gets $chan line] >= 0} {
         puts $line

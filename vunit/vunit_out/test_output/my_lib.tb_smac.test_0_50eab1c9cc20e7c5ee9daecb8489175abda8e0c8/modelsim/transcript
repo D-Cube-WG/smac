@@ -1,7 +1,7 @@
 # Reading pref.tcl
-# source "/home/hguler/vunit_projects/smac/vunit/vunit_out/test_output/my_lib.tb_smac.test_0_50eab1c9cc20e7c5ee9daecb8489175abda8e0c8/modelsim/gui.do"
-# vsim -modelsimini /home/hguler/vunit_projects/smac/vunit/vunit_out/modelsim/modelsim.ini -wlf /home/hguler/vunit_projects/smac/vunit/vunit_out/test_output/my_lib.tb_smac.test_0_50eab1c9cc20e7c5ee9daecb8489175abda8e0c8/modelsim/vsim.wlf -quiet -t ps -onfinish stop my_lib.tb_smac(tb) -L vunit_lib -L my_lib -g/tb_smac/runner_cfg="active python runner : true,enabled_test_cases : test_0,output path : /home/hguler/vunit_projects/smac/vunit/vunit_out/test_output/my_lib.tb_smac.test_0_50eab1c9cc20e7c5ee9daecb8489175abda8e0c8/,tb path : /home/hguler/vunit_projects/smac/tb/,use_color : false" 
-# Start time: 23:30:17 on Jan 07,2026
+# source "/home/hguler/git_projects/smac/vunit/vunit_out/test_output/my_lib.tb_smac.test_0_50eab1c9cc20e7c5ee9daecb8489175abda8e0c8/modelsim/gui.do"
+# vsim -modelsimini /home/hguler/git_projects/smac/vunit/vunit_out/modelsim/modelsim.ini -wlf /home/hguler/git_projects/smac/vunit/vunit_out/test_output/my_lib.tb_smac.test_0_50eab1c9cc20e7c5ee9daecb8489175abda8e0c8/modelsim/vsim.wlf -quiet -t ps -onfinish stop my_lib.tb_smac(tb) -L vunit_lib -L my_lib -g/tb_smac/runner_cfg="active python runner : true,enabled_test_cases : test_0,output path : /home/hguler/git_projects/smac/vunit/vunit_out/test_output/my_lib.tb_smac.test_0_50eab1c9cc20e7c5ee9daecb8489175abda8e0c8/,tb path : /home/hguler/git_projects/smac/tb/,use_color : false" 
+# Start time: 23:48:25 on Jan 07,2026
 # //  ModelSim Microsemi Pro 2024.3 Sep 11 2024 Linux 5.15.0-139-generic
 # //
 # // Unpublished work. Copyright 2024 Siemens
@@ -68,3 +68,5 @@ run -all
 #        105000 ps - default              -    INFO - AFTER COMPRESSION PHASE | a1 : 50622A64FC701B1D8E6D9F12DCF5B77C | a2 : D89D7B1468945974517460C756D2163F | a3 : 45734E188ED34DAE7831D3596BFA47C7
 #        105000 ps - default              -    INFO - AFTER INIT/FINAL        | a1 : 8298B1AB905476E42476B378D614E808 | a2 : C344521699482D93283C03EC7C3DB8B5 | a3 : C7776462168998EE280306F92533097C
 # Break in Subprogram stop at /home/hguler/.local/lib/python3.8/site-packages/vunit/vhdl/core/src/stop_body_2008p.vhd line 13
+# End time: 23:48:33 on Jan 07,2026, Elapsed time: 0:00:08
+# Errors: 0, Warnings: 0
