@@ -1,2 +1,0 @@
-Support of the MGLS_LICENSE_FILE and LM_LICENSE_FILE licensing environment variables will be discontinued starting with the 2025.1 release. Please update to using the SALT_LICENSE_SERVER variable.
-Please contact Siemens EDA Customer Support (https://support.sw.siemens.com/) for assistance.

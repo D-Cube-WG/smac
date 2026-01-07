@@ -1,4 +1,0 @@
-[libraries]
-vunit_lib.files = [
-  "/home/hguler/.local/lib/python3.8/site-packages/vunit/vhdl/**/*.vhd"
-]
