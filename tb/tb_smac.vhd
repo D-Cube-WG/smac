@@ -245,6 +245,8 @@ architecture tb of tb_smac is
   procedure f_compression_phase(
     permutation_array_i : in t_permutation_array;
 
+    m_round_limit_i : in integer; -- this variable is used for appending 1*. if m_round_limit_i=3 then process a block with m=1* after 3 round of message is processed.
+
     num_of_ad_bytes_i : in integer := 0;
     num_of_cp_bytes_i : in integer := 0;
 
@@ -274,6 +276,7 @@ architecture tb of tb_smac is
     variable v_ad_i : std_logic_vector(C_SMAC_REG_WIDTH * v_num_of_ad_blocks - 1 downto 0);
     variable v_cp_i : std_logic_vector(C_SMAC_REG_WIDTH * v_num_of_cp_blocks - 1 downto 0);
 
+    variable v_round_counter : integer;
   begin
     v_a1_i := a1_i;
     v_a2_i := a2_i;
@@ -286,6 +289,7 @@ architecture tb of tb_smac is
     --info("BEFORE COMPRESSION PHASE | a1 : " & to_hstring(v_a1_i) & " | a2 : " & to_hstring(v_a2_i) & " | a3 : " & to_hstring(v_a3_i));
     --info("BEFORE COMPRESSION PHASE | ad : " & to_hstring(ad_i) & " | cp : " & to_hstring(cp_i));
 
+    v_round_counter := 0;
     AD_BLOCKS : if (num_of_ad_bytes_i /= 0) then
       v_ad_i := (v_ad_i'left downto v_ad_i'length - ad_i'length => ad_i, others => '0'); --generating a vector that is multiple of the block size and padding the lsb with zeros
 
@@ -299,6 +303,19 @@ architecture tb of tb_smac is
         v_a2_i := v_a2_o;
         v_a3_i := v_a3_o;
         --info("AD COMPRESSION PHASE | a1 : " & to_hstring(v_a1_i) & " | a2 : " & to_hstring(v_a2_i) & " | a3 : " & to_hstring(v_a3_i));
+
+        v_round_counter := v_round_counter + 1;
+
+        if (v_round_counter = m_round_limit_i) then
+          v_round_counter := 0; --resetting counter
+          v_m_block       := (v_m_block'left downto v_m_block'length - 8 => x"01", others => '0');
+
+          f_smac_compression(permutation_array_i, v_a1_i, v_a2_i, v_a3_i, v_m_block, v_a1_o, v_a2_o, v_a3_o);
+
+          v_a1_i := v_a1_o;
+          v_a2_i := v_a2_o;
+          v_a3_i := v_a3_o;
+        end if;
       end loop;
     end if;
 
@@ -315,6 +332,19 @@ architecture tb of tb_smac is
         v_a2_i := v_a2_o;
         v_a3_i := v_a3_o;
         --info("CP COMPRESSION PHASE | a1 : " & to_hstring(v_a1_i) & " | a2 : " & to_hstring(v_a2_i) & " | a3 : " & to_hstring(v_a3_i));
+
+        v_round_counter := v_round_counter + 1;
+
+        if (v_round_counter = m_round_limit_i) then
+          v_round_counter := 0; --resetting counter
+          v_m_block       := (v_m_block'left downto v_m_block'length - 8 => x"01", others => '0');
+
+          f_smac_compression(permutation_array_i, v_a1_i, v_a2_i, v_a3_i, v_m_block, v_a1_o, v_a2_o, v_a3_o);
+
+          v_a1_i := v_a1_o;
+          v_a2_i := v_a2_o;
+          v_a3_i := v_a3_o;
+        end if;
       end loop;
     end if;
 
@@ -326,6 +356,19 @@ architecture tb of tb_smac is
     --info("v_m_block_len : " & to_hstring(v_m_block));
 
     f_smac_compression(permutation_array_i, v_a1_i, v_a2_i, v_a3_i, v_m_block, v_a1_o, v_a2_o, v_a3_o);
+
+    v_round_counter := v_round_counter + 1;
+
+    if (v_round_counter = m_round_limit_i) then
+      v_a1_i := v_a1_o;
+      v_a2_i := v_a2_o;
+      v_a3_i := v_a3_o;
+
+      v_round_counter := 0; --resetting counter
+      v_m_block       := (v_m_block'left downto v_m_block'length - 8 => x"01", others => '0');
+
+      f_smac_compression(permutation_array_i, v_a1_i, v_a2_i, v_a3_i, v_m_block, v_a1_o, v_a2_o, v_a3_o);
+    end if;
 
     a1_o := v_a1_o;
     a2_o := v_a2_o;
@@ -359,6 +402,8 @@ architecture tb of tb_smac is
     constant d      : integer := 9; --turn this into a global constant
     variable ad_len : integer;
     variable cp_len : integer;
+
+    constant C_LIMIT_FOR_APPENDING_DUMMY_ROUND : integer := 0; --this constant is used for appending 1* into the compression phase. 0:dont append any dummy rounds
   begin
 
     if (is_ad_valid_i = '1') then
@@ -366,6 +411,7 @@ architecture tb of tb_smac is
     else
       ad_len := 0;
     end if;
+
     if (is_cp_valid_i = '1') then
       cp_len := cp_i'length/8;
     else
@@ -378,7 +424,7 @@ architecture tb of tb_smac is
     v_a2 := v_a2_o;
     v_a3 := v_a3_o;
 
-    f_compression_phase(C_PERMUTATION_ARRAY_1, ad_len, cp_len, v_a1, v_a2, v_a3, ad_i, cp_i, v_a1_o, v_a2_o, v_a3_o);
+    f_compression_phase(C_PERMUTATION_ARRAY_1, C_LIMIT_FOR_APPENDING_DUMMY_ROUND, ad_len, cp_len, v_a1, v_a2, v_a3, ad_i, cp_i, v_a1_o, v_a2_o, v_a3_o);
 
     v_a1 := v_a1_o;
     v_a2 := v_a2_o;
@@ -387,140 +433,213 @@ architecture tb of tb_smac is
     p_init_phase(C_PERMUTATION_ARRAY_1, d, v_a1, v_a2, v_a3, v_a1_o, v_a2_o, v_a3_o);
   end procedure p_smac_1;
 
-  procedure p_smac_3_4(--this function is not done
-  is_ad_valid_i : std_logic;
-  is_cp_valid_i : std_logic;
+  procedure p_smac_3_4(
+    is_ad_valid_i : std_logic;
+    is_cp_valid_i : std_logic;
 
-  a1_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-  a2_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-  a3_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-  ad_i : in std_logic_vector; --associated data
-  cp_i : in std_logic_vector; --ciphertext data
+    a1_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    a2_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    a3_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    ad_i : in std_logic_vector; --associated data
+    cp_i : in std_logic_vector; --ciphertext data
 
-  a1_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-  a2_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-  a3_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
+    a1_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    a2_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    a3_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
   ) is
-  variable v_a1 : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-  variable v_a2 : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-  variable v_a3 : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v_a1 : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v_a2 : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v_a3 : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
 
-  variable v_a1_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-  variable v_a2_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-  variable v_a3_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v_a1_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v_a2_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v_a3_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
 
-  variable v_d    : integer := 9; --turn this into a global constant
-  variable ad_len : integer;
-  variable cp_len : integer;
+    variable v_d    : integer := 9; --turn this into a global constant
+    variable ad_len : integer;
+    variable cp_len : integer;
+
+    constant C_LIMIT_FOR_APPENDING_DUMMY_ROUND : integer := 3; --this constant is used for appending 1* into the compression phase.
+  begin
+    if (is_ad_valid_i = '1') then
+      ad_len := ad_i'length/8;
+    else
+      ad_len := 0;
+    end if;
+
+    if (is_cp_valid_i = '1') then
+      cp_len := cp_i'length/8;
+    else
+      cp_len := 0;
+    end if;
+
+    p_init_phase(C_PERMUTATION_ARRAY_42, v_d, a1_i, a2_i, a3_i, v_a1_o, v_a2_o, v_a3_o);
+
+    v_a1 := v_a1_o;
+    v_a2 := v_a2_o;
+    v_a3 := v_a3_o;
+
+    f_compression_phase(C_PERMUTATION_ARRAY_42, C_LIMIT_FOR_APPENDING_DUMMY_ROUND, ad_len, cp_len, v_a1, v_a2, v_a3, ad_i, cp_i, v_a1_o, v_a2_o, v_a3_o);
+
+    v_a1 := v_a1_o;
+    v_a2 := v_a2_o;
+    v_a3 := v_a3_o;
+
+    p_init_phase(C_PERMUTATION_ARRAY_42, v_d, v_a1, v_a2, v_a3, v_a1_o, v_a2_o, v_a3_o);
+  end procedure p_smac_3_4;
+
+  procedure p_smac_1_2(
+    is_ad_valid_i : std_logic;
+    is_cp_valid_i : std_logic;
+
+    a1_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    a2_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    a3_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    ad_i : in std_logic_vector; --associated data
+    cp_i : in std_logic_vector; --ciphertext data
+
+    a1_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    a2_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    a3_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
+  ) is
+    variable v_a1 : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v_a2 : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v_a3 : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+
+    variable v_a1_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v_a2_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v_a3_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+
+    variable v_d    : integer := 9; --turn this into a global constant
+    variable ad_len : integer;
+    variable cp_len : integer;
+
+    constant C_LIMIT_FOR_APPENDING_DUMMY_ROUND : integer := 1; --this constant is used for appending 1* into the compression phase.
+  begin
+    if (is_ad_valid_i = '1') then
+      ad_len := ad_i'length/8;
+    else
+      ad_len := 0;
+    end if;
+
+    if (is_cp_valid_i = '1') then
+      cp_len := cp_i'length/8;
+    else
+      cp_len := 0;
+    end if;
+
+    p_init_phase(C_PERMUTATION_ARRAY_61, v_d, a1_i, a2_i, a3_i, v_a1_o, v_a2_o, v_a3_o);
+
+    v_a1 := v_a1_o;
+    v_a2 := v_a2_o;
+    v_a3 := v_a3_o;
+
+    f_compression_phase(C_PERMUTATION_ARRAY_61, C_LIMIT_FOR_APPENDING_DUMMY_ROUND, ad_len, cp_len, v_a1, v_a2, v_a3, ad_i, cp_i, v_a1_o, v_a2_o, v_a3_o);
+
+    v_a1 := v_a1_o;
+    v_a2 := v_a2_o;
+    v_a3 := v_a3_o;
+
+    p_init_phase(C_PERMUTATION_ARRAY_61, v_d, v_a1, v_a2, v_a3, v_a1_o, v_a2_o, v_a3_o);
+  end procedure p_smac_1_2;
+
 begin
 
-  if (is_ad_valid_i = '1') then
-    ad_len := ad_i'length/8;
-  else
-    ad_len := 0;
-  end if;
-  if (is_cp_valid_i = '1') then
-    cp_len := cp_i'length/8;
-  else
-    cp_len := 0;
-  end if;
+  -- clock and reset generation
+  clk  <= not clk after C_CLK_PERIOD/2;
+  rstn <= '1' after 10 * C_CLK_PERIOD;
 
-  p_init_phase(C_PERMUTATION_ARRAY_42, v_d, a1_i, a2_i, a3_i, v_a1_o, v_a2_o, v_a3_o);
+  main : process
+    variable v_a1   : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v_a2   : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v_a3   : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v_ad   : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v_cp   : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v_a1_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v_a2_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v_a3_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
 
-  v_a1 := v_a1_o;
-  v_a2 := v_a2_o;
-  v_a3 := v_a3_o;
+  begin
+    -- VUnit test runner setup
+    test_runner_setup(runner, runner_cfg);
 
-  f_compression_phase(C_PERMUTATION_ARRAY_42, ad_len, cp_len, v_a1, v_a2, v_a3, ad_i, cp_i, v_a1_o, v_a2_o, v_a3_o);
+    wait until rstn = '1';
+    wait until rising_edge(clk);
 
-  v_a1 := v_a1_o;
-  v_a2 := v_a2_o;
-  v_a3 := v_a3_o;
+    if run("test_0") then
+      v_a1 := x"00000000000000000000000000000000"; --key low
+      v_a2 := x"00000000000000000000000000000000"; --key high
+      v_a3 := x"00000000000000000000000000000000"; --iv
 
-  p_init_phase(C_PERMUTATION_ARRAY_42, v_d, v_a1, v_a2, v_a3, v_a1_o, v_a2_o, v_a3_o);
-end procedure p_smac_3_4;
+      info("== TEST 1 ==");
+      info("KEY : " & to_hstring(v_a2 & v_a1));
+      info("IV  : " & to_hstring(v_a3));
+      info("AD  : null");
+      info("CP  : null");
+      info("For SMAC-1:");
+      p_smac_1('0', '0', v_a1, v_a2, v_a3, x"00", x"11", v_a1_o, v_a2_o, v_a3_o);
+      info("For SMAC-3/4:");
+      p_smac_3_4('0', '0', v_a1, v_a2, v_a3, x"00", x"11", v_a1_o, v_a2_o, v_a3_o);
+      info("For SMAC-1/2:");
+      p_smac_1_2('0', '0', v_a1, v_a2, v_a3, x"00", x"11", v_a1_o, v_a2_o, v_a3_o);
 
-begin
+      v_a1 := x"00000000000000000000000000000000"; --key low
+      v_a2 := x"01000000000000000000000000000000"; --key high
+      v_a3 := x"02000000000000000000000000000000"; --iv
 
--- clock and reset generation
-clk  <= not clk after C_CLK_PERIOD/2;
-rstn <= '1' after 10 * C_CLK_PERIOD;
+      info("== TEST 2 ==");
+      info("KEY : " & to_hstring(v_a2 & v_a1));
+      info("IV  : " & to_hstring(v_a3));
+      info("AD  : 03");
+      info("CP  : null");
+      info("For SMAC-1:");
+      p_smac_1('1', '0', v_a1, v_a2, v_a3, x"03", x"11", v_a1_o, v_a2_o, v_a3_o);
+      info("For SMAC-3/4:");
+      p_smac_3_4('1', '0', v_a1, v_a2, v_a3, x"03", x"11", v_a1_o, v_a2_o, v_a3_o);
+      info("For SMAC-1/2:");
+      p_smac_1_2('1', '0', v_a1, v_a2, v_a3, x"03", x"11", v_a1_o, v_a2_o, v_a3_o);
 
-main : process
-  variable v_a1   : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-  variable v_a2   : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-  variable v_a3   : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-  variable v_ad   : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-  variable v_cp   : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-  variable v_a1_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-  variable v_a2_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-  variable v_a3_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+      v_a1 := x"c0c1c2c3c4c5c6c7c8c9cacbcccdcecf"; --key low
+      v_a2 := x"b0b1b2b3b4b5b6b7b8b9babbbcbdbebf"; --key high
+      v_a3 := x"d0d1d2d3d4d5d6d7d8d9dadbdcdddedf"; --iv
+      --v_ad := x"e0e1e2e3e4e5e6e7e8e9eaebecdddeef";
+      --v_cp := x"f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff";
 
-begin
-  -- VUnit test runner setup
-  test_runner_setup(runner, runner_cfg);
+      info("== TEST 3 ==");
+      info("KEY : " & to_hstring(v_a2 & v_a1));
+      info("IV  : " & to_hstring(v_a3));
+      info("AD  : e0e1e2e3e4e5e6e7e8e9eaebecdddeef");
+      info("CP  : f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff");
+      info("For SMAC-1:");
+      p_smac_1('1', '1', v_a1, v_a2, v_a3, x"e0e1e2e3e4e5e6e7e8e9eaebecdddeef", x"f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff", v_a1_o, v_a2_o, v_a3_o);
+      info("For SMAC-3/4:");
+      p_smac_3_4('1', '1', v_a1, v_a2, v_a3, x"e0e1e2e3e4e5e6e7e8e9eaebecdddeef", x"f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff", v_a1_o, v_a2_o, v_a3_o);
+      info("For SMAC-1/2:");
+      p_smac_1_2('1', '1', v_a1, v_a2, v_a3, x"e0e1e2e3e4e5e6e7e8e9eaebecdddeef", x"f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff", v_a1_o, v_a2_o, v_a3_o);
 
-  wait until rstn = '1';
-  wait until rising_edge(clk);
+      v_a1 := x"101112131415161718191a1b1c1d1e1f"; --key low
+      v_a2 := x"000102030405060708090a0b0c0d0e0f"; --key high
+      v_a3 := x"fffefdfcfbfaf9f8f7f6f5f4f3f2f1f0"; --iv
+      --v_ad := x"0102030405060708090a0b0c0d0e0f10111213";
+      --v_cp := x"1415161718191a1b1c1d1e1f20";
 
-  if run("test_0") then
-    v_a1 := x"00000000000000000000000000000000"; --key low
-    v_a2 := x"00000000000000000000000000000000"; --key high
-    v_a3 := x"00000000000000000000000000000000"; --iv
+      info("== TEST 4 ==");
+      info("KEY : " & to_hstring(v_a2 & v_a1));
+      info("IV  : " & to_hstring(v_a3));
+      info("AD  : 0102030405060708090a0b0c0d0e0f10111213");
+      info("CP  : 1415161718191a1b1c1d1e1f20");
+      info("For SMAC-1:");
+      p_smac_1('1', '1', v_a1, v_a2, v_a3, x"0102030405060708090a0b0c0d0e0f10111213", x"1415161718191a1b1c1d1e1f20", v_a1_o, v_a2_o, v_a3_o);
+      info("For SMAC-3/4:");
+      p_smac_3_4('1', '1', v_a1, v_a2, v_a3, x"0102030405060708090a0b0c0d0e0f10111213", x"1415161718191a1b1c1d1e1f20", v_a1_o, v_a2_o, v_a3_o);
+      info("For SMAC-1/2:");
+      p_smac_1_2('1', '1', v_a1, v_a2, v_a3, x"0102030405060708090a0b0c0d0e0f10111213", x"1415161718191a1b1c1d1e1f20", v_a1_o, v_a2_o, v_a3_o);
+    end if;
 
-    info("== TEST 1 ==");
-    info("KEY : " & to_hstring(v_a2 & v_a1));
-    info("IV  : " & to_hstring(v_a3));
-    info("AD  : null");
-    info("CP  : null");
-    info("For SMAC-1:");
-    p_smac_1('0', '0', v_a1, v_a2, v_a3, x"00", x"11", v_a1_o, v_a2_o, v_a3_o);
+    -- VUnit test runner cleanup
+    test_runner_cleanup(runner);
+  end process;
 
-    v_a1 := x"00000000000000000000000000000000"; --key low
-    v_a2 := x"01000000000000000000000000000000"; --key high
-    v_a3 := x"02000000000000000000000000000000"; --iv
-
-    info("== TEST 2 ==");
-    info("KEY : " & to_hstring(v_a2 & v_a1));
-    info("IV  : " & to_hstring(v_a3));
-    info("AD  : 03");
-    info("CP  : null");
-    info("For SMAC-1:");
-    p_smac_1('1', '0', v_a1, v_a2, v_a3, x"03", x"11", v_a1_o, v_a2_o, v_a3_o);
-
-    v_a1 := x"c0c1c2c3c4c5c6c7c8c9cacbcccdcecf"; --key low
-    v_a2 := x"b0b1b2b3b4b5b6b7b8b9babbbcbdbebf"; --key high
-    v_a3 := x"d0d1d2d3d4d5d6d7d8d9dadbdcdddedf"; --iv
-    --v_ad := x"e0e1e2e3e4e5e6e7e8e9eaebecdddeef";
-    --v_cp := x"f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff";
-
-    info("== TEST 3 ==");
-    info("KEY : " & to_hstring(v_a2 & v_a1));
-    info("IV  : " & to_hstring(v_a3));
-    info("AD  : e0e1e2e3e4e5e6e7e8e9eaebecdddeef");
-    info("CP  : f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff");
-    info("For SMAC-1:");
-    p_smac_1('1', '1', v_a1, v_a2, v_a3, x"e0e1e2e3e4e5e6e7e8e9eaebecdddeef", x"f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff", v_a1_o, v_a2_o, v_a3_o);
-
-    v_a1 := x"101112131415161718191a1b1c1d1e1f"; --key low
-    v_a2 := x"000102030405060708090a0b0c0d0e0f"; --key high
-    v_a3 := x"fffefdfcfbfaf9f8f7f6f5f4f3f2f1f0"; --iv
-    --v_ad := x"0102030405060708090a0b0c0d0e0f10111213";
-    --v_cp := x"1415161718191a1b1c1d1e1f20";
-
-    info("== TEST 4 ==");
-    info("KEY : " & to_hstring(v_a2 & v_a1));
-    info("IV  : " & to_hstring(v_a3));
-    info("AD  : 0102030405060708090a0b0c0d0e0f10111213");
-    info("CP  : 1415161718191a1b1c1d1e1f20");
-    info("For SMAC-1:");
-    p_smac_1('1', '1', v_a1, v_a2, v_a3, x"0102030405060708090a0b0c0d0e0f10111213", x"1415161718191a1b1c1d1e1f20", v_a1_o, v_a2_o, v_a3_o);
-  end if;
-
-  -- VUnit test runner cleanup
-  test_runner_cleanup(runner);
-end process;
-
--- DUT instantiation
+  -- DUT instantiation
 
 end architecture;
