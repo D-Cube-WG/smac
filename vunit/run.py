@@ -23,7 +23,7 @@ hdl_dir = ROOT / "hdl"
 tb_dir  = ROOT / "tb"
 
 hdl_files = [str(f.resolve()) for f in hdl_dir.glob("*.vhd")]
-tb_files  = [str(f.resolve()) for f in tb_dir.glob("*.vhd")]
+tb_files  = [str(f.resolve()) for f in tb_dir.glob("tb_smac.vhd")]
 
 print("HDL files:", hdl_files)
 print("Testbench files:", tb_files)

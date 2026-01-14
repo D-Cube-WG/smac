@@ -1,0 +1,22 @@
+# do /home/hguler/.local/lib/python3.8/site-packages/vunit/sim_if/tcl_read_eval_loop.tcl
+# vsim -modelsimini /home/hguler/git_projects/smac/vunit/vunit_out/modelsim/modelsim.ini -wlf /home/hguler/git_projects/smac/vunit/vunit_out/test_output/my_lib.tb_smac_pi.test_0_cb9ff3906d141bb71d0a546677ea5a512266bb6d/modelsim/vsim.wlf -quiet -t ps -onfinish stop my_lib.tb_smac_pi(tb) -L vunit_lib -L my_lib -L osvvm -g/tb_smac_pi/runner_cfg="active python runner : true,enabled_test_cases : test_0,output path : /home/hguler/git_projects/smac/vunit/vunit_out/test_output/my_lib.tb_smac_pi.test_0_cb9ff3906d141bb71d0a546677ea5a512266bb6d/,tb path : /home/hguler/git_projects/smac/tb/,use_color : true" 
+# Start time: 23:58:53 on Jan 14,2026
+# //  ModelSim Microsemi Pro 2024.3 Sep 11 2024 Linux 5.15.0-139-generic
+# //
+# // Unpublished work. Copyright 2024 Siemens
+# //
+# // This material contains trade secrets or otherwise confidential information
+# // owned by Siemens Industry Software Inc. or its affiliates (collectively,
+# // "SISW"), or its licensors. Access to and use of this information is strictly
+# // limited as set forth in the Customer's applicable agreements with SISW.
+# //
+# // This material may not be copied, distributed, or otherwise disclosed outside
+# // of the Customer's facilities without the express written permission of SISW,
+# // and may not be used in any way not expressly authorized by SISW.
+# //
+# ** Fatal: (vsim-3480) Function "f_select_perm_array" did not complete via a RETURN statement.
+#    Time: 0 ps  Iteration: 0  Instance: /tb_smac_pi/U_SMAC_PI/U_SMAC_PERM File: /home/hguler/git_projects/smac/hdl/smac_perm.vhd Line: 46
+# FATAL ERROR while loading design
+# Error loading design
+# End time: 23:58:53 on Jan 14,2026, Elapsed time: 0:00:00
+# Errors: 1, Warnings: 0
