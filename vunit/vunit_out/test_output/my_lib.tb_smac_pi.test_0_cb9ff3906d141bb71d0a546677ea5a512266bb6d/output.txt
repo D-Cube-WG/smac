@@ -1,2 +1,0 @@
-skip (P=0 S=1 F=0 T=1) my_lib.tb_smac_pi.test_0 (130.5 seconds)
-
