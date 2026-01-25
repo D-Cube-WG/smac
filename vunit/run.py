@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parent.parent
 print("ROOT folder:", ROOT)
 
 # Start VUnit
-vu = VUnit.from_argv(compile_builtins=False)
+vu = VUnit.from_argv()
 print("VUnit started")
 
 # Add the built-in VUnit library first
@@ -16,6 +16,8 @@ print("VUnit built-ins added (vunit_lib)")
 
 # Add your own library
 my_lib = vu.add_library("my_lib")
+vu.add_com()
+vu.add_verification_components()
 print("Library added:", my_lib.name)
 
 # Collect HDL and TB files
@@ -23,7 +25,10 @@ hdl_dir = ROOT / "hdl"
 tb_dir  = ROOT / "tb"
 
 hdl_files = [str(f.resolve()) for f in hdl_dir.glob("*.vhd")]
-tb_files  = [str(f.resolve()) for f in tb_dir.glob("tb_smac.vhd")]
+tb_files = (
+    [str(f.resolve()) for f in tb_dir.glob("tb_smac.vhd")] +
+    [str(f.resolve()) for f in tb_dir.glob("pkg_*.vhd")]
+)
 
 print("HDL files:", hdl_files)
 print("Testbench files:", tb_files)
@@ -35,6 +40,20 @@ if hdl_files:
 # Add TB files to your library (also my_lib)
 if tb_files:
     my_lib.add_source_files(tb_files)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 print("All VHDL files added")
 

@@ -8,7 +8,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity smac_xor is
+entity smac_xor_3 is
     port (
         --clk_i   :  in std_logic; --! Future Work: If there is critical path problem!  
         --rstn_i  :  in std_logic; --! Future Work: If there is critical path problem!  
@@ -20,9 +20,9 @@ entity smac_xor is
 
         xor_o : out std_logic_vector(127 downto 0)
     );
-end entity smac_xor;
+end entity smac_xor_3;
 
-architecture rtl of smac_xor is
+architecture rtl of smac_xor_3 is
 
     -- constant declarations
     constant C_REG_SIZE : integer := 128;

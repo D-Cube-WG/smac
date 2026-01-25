@@ -4,545 +4,262 @@ use ieee.numeric_std.all;
 
 library vunit_lib;
 context vunit_lib.vunit_context; -- <-- REQUIRED for test_runner_setup, run, test_runner_cleanup
-use vunit_lib.queue_pkg;
+use vunit_lib.com_pkg.all;
+use vunit_lib.axi_stream_pkg.all;
+use vunit_lib.queue_pkg.all;
 
 library work;
 use work.pkg_aes.all;
+use work.pkg_smac.all;
+use work.pkg_gnrl.all;
 
 entity tb_smac is
-  generic
-    (runner_cfg : string);
+  generic (runner_cfg : string);
 end tb_smac;
 
 architecture tb of tb_smac is
   --constant declarations
-  constant C_DATA_WIDTH : integer := 8;
-  constant C_WORD_WIDTH : integer := 4;
-  constant C_CLK_PERIOD : time    := 10 ns;
+  constant C_DATA_WIDTH        : integer := C_SMAC_REG_WIDTH;
+  constant C_WORD_WIDTH        : integer := C_DATA_WIDTH/8;
+  constant C_M_AXIS_DATA_WIDTH : integer := 3 * C_DATA_WIDTH;
+  constant C_M_AXIS_WORD_WIDTH : integer := 3 * C_DATA_WIDTH/8;
+  constant C_CLK_PERIOD        : time    := 10 ns;
 
-  constant C_SMAC_REG_WIDTH : integer := 128;
-
-  --permutations
-  type t_permutation_array is array (0 to 15) of integer;
-  --type t_permutation_arrays is array (natural range <>) of t_permutation_array; --this will be used when all of the permutations are written as constants
-  constant C_PERMUTATION_ARRAY_1 : t_permutation_array := (
-    0  => 0,
-    1  => 7,
-    2  => 14,
-    3  => 11,
-    4  => 4,
-    5  => 13,
-    6  => 10,
-    7  => 1,
-    8  => 8,
-    9  => 15,
-    10 => 6,
-    11 => 3,
-    12 => 12,
-    13 => 5,
-    14 => 2,
-    15 => 9
+  constant C_M_AXIS_STALL_CONFIG : stall_config_t := (
+    stall_probability => 0.5,
+    min_stall_cycles  => 1,
+    max_stall_cycles  => 4
   );
 
-  constant C_PERMUTATION_ARRAY_42 : t_permutation_array := (
-    0 => 7, 1 => 14, 2 => 15, 3 => 10, 4 => 12, 5 => 13, 6 => 3, 7 => 0, 8 => 4, 9 => 6, 10 => 1, 11 => 5, 12 => 8, 13 => 11, 14 => 2, 15 => 9
+  constant C_S_AXIS_STALL_CONFIG : stall_config_t := (
+    stall_probability => 1.0,
+    min_stall_cycles  => 1,
+    max_stall_cycles  => 4
   );
 
-  constant C_PERMUTATION_ARRAY_61 : t_permutation_array := (
-    0 => 0, 1 => 11, 2 => 7, 3 => 14, 4 => 6, 5 => 4, 6 => 1, 7 => 15, 8 => 9, 9 => 3, 10 => 8, 11 => 5, 12 => 13, 13 => 2, 14 => 10, 15 => 12
+  constant master_axi_stream : axi_stream_master_t := new_axi_stream_master(
+  data_length  => C_DATA_WIDTH,
+  id_length    => 0,
+  user_length  => 0,
+  stall_config => C_M_AXIS_STALL_CONFIG
+  );
+
+  constant slave_axi_stream : axi_stream_slave_t := new_axi_stream_slave(
+  data_length  => C_M_AXIS_DATA_WIDTH,
+  id_length    => 0,
+  dest_length  => 0,
+  user_length  => 0,
+  stall_config => C_S_AXIS_STALL_CONFIG
   );
 
   --signal declarations
   signal clk  : std_logic := '0';
   signal rstn : std_logic := '0';
 
-  function f_ceil (
-    a : natural;
-    b : positive
-  ) return natural is
-  begin
-    return (a + b - 1) / b;
-  end function f_ceil;
+  signal a1_i : std_logic_vector(C_DATA_WIDTH - 1 downto 0);
+  signal a2_i : std_logic_vector(C_DATA_WIDTH - 1 downto 0);
+  signal a3_i : std_logic_vector(C_DATA_WIDTH - 1 downto 0);
 
-  function f_swap_bytes(
-    vec : std_logic_vector
-  ) return std_logic_vector is
-    variable v_r_vec    : std_logic_vector(vec'length - 1 downto 0);
-    variable v_swap_vec : std_logic_vector(vec'length - 1 downto 0);
-  begin
-    v_r_vec := vec;
-    for i in 0 to v_r_vec'length/8 - 1 loop
-      v_swap_vec(8 * (i + 1) - 1 downto 8 * i) := v_r_vec(v_r_vec'left - i * 8 downto v_r_vec'length - (i + 1) * 8);
-    end loop;
+  signal s00_axis_tdata  : std_logic_vector(C_DATA_WIDTH - 1 downto 0);
+  signal s00_axis_tvalid : std_logic;
+  signal s00_axis_tready : std_logic;
+  signal s00_axis_tlast  : std_logic;
 
-    return v_swap_vec;
-  end function f_swap_bytes;
-
-  impure function f_byte_to_axis (
-    byte_i          : queue_t;
-    word_width_i    : integer := C_WORD_WIDTH;
-    is_big_endian_i : boolean := true
-  ) return queue_t is
-    variable v_word_queue : queue_t := new_queue;
-
-    variable v8 : std_logic_vector(7 downto 0);
-
-    variable v_tdata : std_logic_vector(8 * word_width_i - 1 downto 0);
-    variable v_tkeep : std_logic_vector(word_width_i - 1 downto 0);
-    variable v_tlast : std_logic;
-
-    variable v_valid_byte : std_logic;
-  begin
-
-    v_tlast := '0';
-    while (v_tlast = '0') loop
-      for i in 0 to word_width_i - 1 loop
-        if (v_tlast = '1') then --if v_tlast='1' then there is nothing to pop
-          v8           := (others => '0');
-          v_valid_byte := '0';
-        else
-          v8 := pop(byte_i);
-          if (is_empty(byte_i)) then
-            v_tlast := '1';
-          end if;
-          v_valid_byte := '1';
-        end if;
-
-        if (is_big_endian_i = true) then                    --we could use a byte-swap function but it could increase our cpu-work-load
-          v_tdata := v_tdata(v_tdata'left - 8 downto 0) & v8; --assuming simulation tool optimized shift operation
-          v_tkeep := v_tkeep(v_tkeep'left - 1 downto 0) & v_valid_byte;
-        else
-          v_tdata := v8 & v_tdata(v_tdata'left downto 8);
-          v_tkeep := v_valid_byte & v_tkeep(v_tkeep'left downto 1);
-        end if;
-      end loop;
-
-      --info("v_tdata : " & to_hstring(v_tdata) & " | v_tkeep : " & to_hstring(v_tkeep) & " | v_tlast : " & to_string(v_tlast));
-      push(v_word_queue, v_tdata & v_tkeep & v_tlast);
-    end loop;
-
-    return v_word_queue;
-  end function f_byte_to_axis;
+  signal m00_axis_tdata  : std_logic_vector(3 * C_SMAC_REG_WIDTH - 1 downto 0);
+  signal m00_axis_tvalid : std_logic;
+  signal m00_axis_tready : std_logic;
+  signal m00_axis_tlast  : std_logic;
 
   procedure p_prep_packet (
-    length_i           : in integer;
+    ad_length_i : in integer;
+    cp_length_i : in integer;
+
+    a1_o : out std_logic_vector(127 downto 0);
+    a2_o : out std_logic_vector(127 downto 0);
+    a3_o : out std_logic_vector(127 downto 0);
+
     generated_packet_o : out queue_t;
     expected_packet_o  : out queue_t
   ) is
-    variable v_byte_queue : queue_t := new_queue;
+    variable v_byte_queue     : queue_t := new_queue;
+    variable v_byte_queue_exp : queue_t := new_queue;
 
-    variable v8 : std_logic_vector(7 downto 0);
+    variable v_a1     : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v_a2     : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v_a3     : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v_a1_o   : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v_a2_o   : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v_a3_o   : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v_result : std_logic_vector(3 * C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v8       : std_logic_vector(7 downto 0);
+
+    variable v_payload_ad : std_logic_vector(8 * ad_length_i - 1 downto 0);
+    variable v_payload_cp : std_logic_vector(8 * cp_length_i - 1 downto 0);
+
+    variable v_last_block_ad_len : std_logic_vector(63 downto 0);
+    variable v_last_block_cp_len : std_logic_vector(63 downto 0);
+    variable v_last_block        : std_logic_vector(127 downto 0);
+
+    variable rnd_seed : integer := 0;
+    variable len      : integer := 0;
+
+    variable ad_valid : std_logic := '0';
+    variable cp_valid : std_logic := '0';
+
   begin
-    --generating dst_mac
-    for i in 0 to 5 loop
-      v8 := std_logic_vector(to_unsigned(i, 8));
-      push(v_byte_queue, v8);
 
+    --generating a1
+    v_a1     := f_rand_vector(C_SMAC_REG_WIDTH, rnd_seed);
+    rnd_seed := rnd_seed + 1;
+
+    --generating a2
+    v_a2     := f_rand_vector(C_SMAC_REG_WIDTH, rnd_seed);
+    rnd_seed := rnd_seed + 1;
+
+    --generating a3
+    v_a3     := f_rand_vector(C_SMAC_REG_WIDTH, rnd_seed);
+    rnd_seed := rnd_seed + 1;
+
+    if (ad_length_i /= 0) then
+      ad_valid := '1';
+      --generating payload_ad
+      v_payload_ad := f_rand_vector(v_payload_ad'length, rnd_seed);
+      rnd_seed     := rnd_seed + 1;
+
+      for i in 0 to v_payload_ad'length/8 - 1 loop
+        v8 := v_payload_ad(v_payload_ad'left - 8 * i downto v_payload_ad'length - 8 * (i + 1));
+        push_std_ulogic_vector(v_byte_queue, v8);
+
+        len := len + 1;
+        --info("ad v8 : " & to_hstring(v8));
+      end loop;
+
+      while (len mod C_WORD_WIDTH /= 0) loop --padding last block with zeros
+        v8 := x"00";
+        push_std_ulogic_vector(v_byte_queue, v8);
+
+        len := len + 1;
+      end loop;
+    end if;
+
+    if (cp_length_i /= 0) then
+      cp_valid := '1';
+      --generating payload_cp
+      v_payload_cp := f_rand_vector(v_payload_cp'length, rnd_seed);
+      rnd_seed     := rnd_seed + 1;
+
+      for i in 0 to v_payload_cp'length/8 - 1 loop
+        v8 := v_payload_cp(v_payload_cp'left - 8 * i downto v_payload_cp'length - 8 * (i + 1));
+        push_std_ulogic_vector(v_byte_queue, v8);
+        len := len + 1;
+        --info("cp v8 : " & to_hstring(v8));
+      end loop;
+
+      while (len mod C_WORD_WIDTH /= 0) loop --padding last block with zeros
+        v8 := x"00";
+        push_std_ulogic_vector(v_byte_queue, v8);
+        len := len + 1;
+      end loop;
+    end if;
+
+    v_last_block_ad_len := std_logic_vector(to_unsigned(ad_length_i * 8, v_last_block_ad_len'length)); --ad size in bits
+    v_last_block_ad_len := f_swap_bytes(v_last_block_ad_len);                                          --ad size in bits
+
+    v_last_block_cp_len := std_logic_vector(to_unsigned(cp_length_i * 8, v_last_block_cp_len'length)); --cp size in bits
+    v_last_block_cp_len := f_swap_bytes(v_last_block_cp_len);                                          --cp size in bits
+
+    v_last_block := v_last_block_ad_len & v_last_block_cp_len;
+
+    --generating last block
+    for i in 0 to v_last_block'length/8 - 1 loop
+      v8 := v_last_block(v_last_block'left - 8 * i downto v_last_block'length - 8 * (i + 1));
+      push_std_ulogic_vector(v_byte_queue, v8);
       --info("v8 : " & to_hstring(v8));
     end loop;
 
-    --generating src_mac
-    for i in 0 to 5 loop
-      v8 := std_logic_vector(to_unsigned(i, 8));
-      push(v_byte_queue, v8);
+    a1_o := v_a1;
+    a2_o := v_a2;
+    a3_o := v_a3;
 
+    p_smac_1(
+    is_ad_valid_i => ad_valid,
+    is_cp_valid_i => cp_valid,
+    a1_i          => v_a1,
+    a2_i          => v_a2,
+    a3_i          => v_a3,
+    ad_i          => v_payload_ad,
+    cp_i          => v_payload_cp,
+    a1_o          => v_a1_o,
+    a2_o          => v_a2_o,
+    a3_o          => v_a3_o
+    );
+
+    --generating
+    generated_packet_o := f_byte_to_axis(v_byte_queue, C_WORD_WIDTH);
+
+    --generating
+    v_result := v_a1_o & v_a2_o & v_a3_o;
+    for i in 0 to v_result'length/8 - 1 loop
+      v8 := v_result(v_result'left - 8 * i downto v_result'length - 8 * (i + 1));
+      push_std_ulogic_vector(v_byte_queue_exp, v8);
       --info("v8 : " & to_hstring(v8));
     end loop;
 
-    --generating eth_type
-    for i in 0 to 1 loop
-      v8 := std_logic_vector(to_unsigned(i, 8));
-      push(v_byte_queue, v8);
-
-      --info("v8 : " & to_hstring(v8));
-    end loop;
-
-    generated_packet_o := v_byte_queue;
-    expected_packet_o  := f_byte_to_axis(v_byte_queue);
+    expected_packet_o := f_byte_to_axis(v_byte_queue_exp, C_M_AXIS_DATA_WIDTH/8);
 
   end procedure p_prep_packet;
 
-  impure function f_smac_permutation (
-    permutation_array : t_permutation_array;
-    vec               : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
-  ) return std_logic_vector is
-    variable new_vec      : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    variable offset_value : integer;
-  begin
-    for i in 0 to C_SMAC_REG_WIDTH/8 - 1 loop
-      offset_value                                                      := permutation_array(i);
-      new_vec(new_vec'left - 8 * i downto new_vec'length - 8 * (i + 1)) := vec(new_vec'left - 8 * offset_value downto new_vec'length - 8 * (offset_value + 1));
-    end loop;
+  signal r_received_queue : queue_t := new_queue;
 
-    return new_vec;
-  end function f_smac_permutation;
+  impure function f_compare_axis(expected_queue : queue_t) return boolean is
+    variable v_received_tdata                     : std_logic_vector(C_M_AXIS_DATA_WIDTH - 1 downto 0);
+    variable v_received_tkeep                     : std_logic_vector(C_M_AXIS_DATA_WIDTH/8 - 1 downto 0);
+    variable v_received_tlast                     : std_logic;
+    variable v_received                           : std_logic_vector(v_received_tdata'length + v_received_tkeep'length + 1 - 1 downto 0);
 
-  procedure f_smac_compression(
-    permutation_array_i : in t_permutation_array;
+    variable v_expected_tdata : std_logic_vector(C_M_AXIS_DATA_WIDTH - 1 downto 0);
+    variable v_expected_tkeep : std_logic_vector(C_M_AXIS_DATA_WIDTH/8 - 1 downto 0);
+    variable v_expected_tlast : std_logic;
+    variable v_expected       : std_logic_vector(v_received_tdata'length + v_received_tkeep'length + 1 - 1 downto 0);
 
-    a1_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    a2_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    a3_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    m_i  : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-
-    a1_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    a2_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    a3_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
-  ) is begin
-    --info("INPUT COMPRESSION FUNC | a1_i : " & to_hstring(a1_i) & " | a2_i : " & to_hstring(a2_i) & " | a3_i : " & to_hstring(a3_i) & " | m_i : " & to_hstring(m_i));
-
-    a1_o := f_smac_permutation(permutation_array_i, a2_i xor a3_i xor m_i);
-    a2_o := f_aes_round(a1_i, m_i);
-    a3_o := f_aes_round(a2_i, m_i);
-
-    --info("OUTPUT COMPRESSION FUNC | a1_o : " & to_hstring(a1_o) & " | a2_o : " & to_hstring(a2_o) & " | a3_o : " & to_hstring(a3_o));
-  end procedure f_smac_compression;
-
-  procedure p_init_phase(
-    permutation_array_i : in t_permutation_array;
-    d_i                 : in integer;
-
-    a1_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    a2_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    a3_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-
-    a1_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    a2_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    a3_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
-  ) is
-    variable v_a1_i : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    variable v_a2_i : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    variable v_a3_i : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-
-    variable v_a1_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    variable v_a2_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    variable v_a3_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-
-    variable v_m : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-  begin
-    v_a1_i := a1_i;
-    v_a2_i := a2_i;
-    v_a3_i := a3_i;
-
-    v_m := (v_m'left downto v_m'length - 8 => x"01", others => '0');
-    --info("d : " & to_string(d));
-    --info("BEFORE INIT | a1 : " & to_hstring(v_a1_i) & " | a2 : " & to_hstring(v_a2_i) & " | a3 : " & to_hstring(v_a3_i));
-    for i in 0 to d_i - 1 loop
-      f_smac_compression(permutation_array_i, v_a1_i, v_a2_i, v_a3_i, v_m, v_a1_o, v_a2_o, v_a3_o);
-
-      v_a1_i := v_a1_o;
-      v_a2_i := v_a2_o;
-      v_a3_i := v_a3_o;
-    end loop;
-
-    a1_o := a1_i xor v_a1_i;
-    a2_o := a2_i xor v_a2_i;
-    a3_o := a3_i xor v_a3_i;
-
-    info("AFTER INIT/FINAL        | a1 : " & to_hstring(a1_o) & " | a2 : " & to_hstring(a2_o) & " | a3 : " & to_hstring(a3_o));
-  end procedure p_init_phase;
-
-  procedure f_compression_phase(
-    permutation_array_i : in t_permutation_array;
-
-    m_round_limit_i : in integer; -- this variable is used for appending 1*. if m_round_limit_i=3 then process a block with m=1* after 3 round of message is processed.
-
-    num_of_ad_bytes_i : in integer := 0;
-    num_of_cp_bytes_i : in integer := 0;
-
-    a1_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    a2_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    a3_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    ad_i : in std_logic_vector;
-    cp_i : in std_logic_vector;
-
-    a1_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    a2_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    a3_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
-  ) is
-    variable v_a1_i : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    variable v_a2_i : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    variable v_a3_i : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-
-    variable v_a1_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    variable v_a2_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    variable v_a3_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-
-    variable v_m_block : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-
-    variable v_num_of_ad_blocks : integer := f_ceil(num_of_ad_bytes_i, 16);
-    variable v_num_of_cp_blocks : integer := f_ceil(num_of_cp_bytes_i, 16);
-
-    variable v_ad_i : std_logic_vector(C_SMAC_REG_WIDTH * v_num_of_ad_blocks - 1 downto 0);
-    variable v_cp_i : std_logic_vector(C_SMAC_REG_WIDTH * v_num_of_cp_blocks - 1 downto 0);
-
-    variable v_round_counter : integer;
-  begin
-    v_a1_i := a1_i;
-    v_a2_i := a2_i;
-    v_a3_i := a3_i;
-
-    --info("num_of_ad_bytes_i   : " & to_string(num_of_ad_bytes_i));
-    --info("num_of_cp_bytes_i   : " & to_string(num_of_cp_bytes_i));
-    --info("v_num_of_ad_blocks : " & to_string(v_num_of_ad_blocks));
-    --info("v_num_of_cp_blocks : " & to_string(v_num_of_cp_blocks));
-    --info("BEFORE COMPRESSION PHASE | a1 : " & to_hstring(v_a1_i) & " | a2 : " & to_hstring(v_a2_i) & " | a3 : " & to_hstring(v_a3_i));
-    --info("BEFORE COMPRESSION PHASE | ad : " & to_hstring(ad_i) & " | cp : " & to_hstring(cp_i));
-
-    v_round_counter := 0;
-    AD_BLOCKS : if (num_of_ad_bytes_i /= 0) then
-      v_ad_i := (v_ad_i'left downto v_ad_i'length - ad_i'length => ad_i, others => '0'); --generating a vector that is multiple of the block size and padding the lsb with zeros
-
-      for i in 0 to v_num_of_ad_blocks - 1 loop
-        v_m_block := v_ad_i(v_ad_i'left - i * C_SMAC_REG_WIDTH downto v_ad_i'length - (i + 1) * C_SMAC_REG_WIDTH);
-        --info("v_m_block_ad  : " & to_hstring(v_m_block));
-
-        f_smac_compression(permutation_array_i, v_a1_i, v_a2_i, v_a3_i, v_m_block, v_a1_o, v_a2_o, v_a3_o);
-
-        v_a1_i := v_a1_o;
-        v_a2_i := v_a2_o;
-        v_a3_i := v_a3_o;
-        --info("AD COMPRESSION PHASE | a1 : " & to_hstring(v_a1_i) & " | a2 : " & to_hstring(v_a2_i) & " | a3 : " & to_hstring(v_a3_i));
-
-        v_round_counter := v_round_counter + 1;
-
-        if (v_round_counter = m_round_limit_i) then
-          v_round_counter := 0; --resetting counter
-          v_m_block       := (v_m_block'left downto v_m_block'length - 8 => x"01", others => '0');
-
-          f_smac_compression(permutation_array_i, v_a1_i, v_a2_i, v_a3_i, v_m_block, v_a1_o, v_a2_o, v_a3_o);
-
-          v_a1_i := v_a1_o;
-          v_a2_i := v_a2_o;
-          v_a3_i := v_a3_o;
-        end if;
-      end loop;
-    end if;
-
-    CP_BLOCKS : if (num_of_cp_bytes_i /= 0) then
-      v_cp_i := (v_cp_i'left downto v_cp_i'length - cp_i'length => cp_i, others => '0'); --generating a vector that is multiple of the block size and padding the lsb with zeros
-
-      for i in 0 to v_num_of_cp_blocks - 1 loop
-        v_m_block := v_cp_i(v_cp_i'left - i * C_SMAC_REG_WIDTH downto v_cp_i'length - (i + 1) * C_SMAC_REG_WIDTH);
-
-        --info("v_m_block_cp  : " & to_hstring(v_m_block));
-        f_smac_compression(permutation_array_i, v_a1_i, v_a2_i, v_a3_i, v_m_block, v_a1_o, v_a2_o, v_a3_o);
-
-        v_a1_i := v_a1_o;
-        v_a2_i := v_a2_o;
-        v_a3_i := v_a3_o;
-        --info("CP COMPRESSION PHASE | a1 : " & to_hstring(v_a1_i) & " | a2 : " & to_hstring(v_a2_i) & " | a3 : " & to_hstring(v_a3_i));
-
-        v_round_counter := v_round_counter + 1;
-
-        if (v_round_counter = m_round_limit_i) then
-          v_round_counter := 0; --resetting counter
-          v_m_block       := (v_m_block'left downto v_m_block'length - 8 => x"01", others => '0');
-
-          f_smac_compression(permutation_array_i, v_a1_i, v_a2_i, v_a3_i, v_m_block, v_a1_o, v_a2_o, v_a3_o);
-
-          v_a1_i := v_a1_o;
-          v_a2_i := v_a2_o;
-          v_a3_i := v_a3_o;
-        end if;
-      end loop;
-    end if;
-
-    v_m_block(C_SMAC_REG_WIDTH - 1 downto C_SMAC_REG_WIDTH/2) := std_logic_vector(to_unsigned(num_of_ad_bytes_i * 8, C_SMAC_REG_WIDTH/2)); --size-in-bits
-    v_m_block(C_SMAC_REG_WIDTH/2 - 1 downto 0)                := std_logic_vector(to_unsigned(num_of_cp_bytes_i * 8, C_SMAC_REG_WIDTH/2)); --size-in-bits
-
-    v_m_block(C_SMAC_REG_WIDTH - 1 downto C_SMAC_REG_WIDTH/2) := f_swap_bytes(v_m_block(C_SMAC_REG_WIDTH - 1 downto C_SMAC_REG_WIDTH/2));
-    v_m_block(C_SMAC_REG_WIDTH/2 - 1 downto 0)                := f_swap_bytes(v_m_block(C_SMAC_REG_WIDTH/2 - 1 downto 0));
-    --info("v_m_block_len : " & to_hstring(v_m_block));
-
-    f_smac_compression(permutation_array_i, v_a1_i, v_a2_i, v_a3_i, v_m_block, v_a1_o, v_a2_o, v_a3_o);
-
-    v_round_counter := v_round_counter + 1;
-
-    if (v_round_counter = m_round_limit_i) then
-      v_a1_i := v_a1_o;
-      v_a2_i := v_a2_o;
-      v_a3_i := v_a3_o;
-
-      v_round_counter := 0; --resetting counter
-      v_m_block       := (v_m_block'left downto v_m_block'length - 8 => x"01", others => '0');
-
-      f_smac_compression(permutation_array_i, v_a1_i, v_a2_i, v_a3_i, v_m_block, v_a1_o, v_a2_o, v_a3_o);
-    end if;
-
-    a1_o := v_a1_o;
-    a2_o := v_a2_o;
-    a3_o := v_a3_o;
-
-    info("AFTER COMPRESSION PHASE | a1 : " & to_hstring(a1_o) & " | a2 : " & to_hstring(a2_o) & " | a3 : " & to_hstring(a3_o));
-  end procedure f_compression_phase;
-
-  procedure p_smac_1(
-    is_ad_valid_i : std_logic;
-    is_cp_valid_i : std_logic;
-
-    a1_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    a2_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    a3_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    ad_i : in std_logic_vector; --associated data
-    cp_i : in std_logic_vector; --ciphertext data
-
-    a1_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    a2_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    a3_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
-  ) is
-    variable v_a1 : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    variable v_a2 : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    variable v_a3 : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-
-    variable v_a1_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    variable v_a2_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    variable v_a3_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-
-    constant d      : integer := 9; --turn this into a global constant
-    variable ad_len : integer;
-    variable cp_len : integer;
-
-    constant C_LIMIT_FOR_APPENDING_DUMMY_ROUND : integer := 0; --this constant is used for appending 1* into the compression phase. 0:dont append any dummy rounds
+    variable v_flag : boolean := true;
   begin
 
-    if (is_ad_valid_i = '1') then
-      ad_len := ad_i'length/8;
-    else
-      ad_len := 0;
-    end if;
+    POP_LOOP : loop
+      v_received       := pop_std_ulogic_vector(r_received_queue);
+      v_received_tdata := v_received(v_received'left downto v_received'length - v_received_tdata'length);
+      v_received_tkeep := v_received(v_received_tkeep'length downto 1);
+      v_received_tlast := v_received(0);
 
-    if (is_cp_valid_i = '1') then
-      cp_len := cp_i'length/8;
-    else
-      cp_len := 0;
-    end if;
+      v_expected       := pop_std_ulogic_vector(expected_queue);
+      v_expected_tdata := v_expected(v_expected'left downto v_expected'length - v_expected_tdata'length);
+      v_expected_tkeep := v_expected(v_expected_tkeep'length downto 1);
+      v_expected_tlast := v_expected(0);
 
-    p_init_phase(C_PERMUTATION_ARRAY_1, d, a1_i, a2_i, a3_i, v_a1_o, v_a2_o, v_a3_o);
+      info("TDATA | expected : " & to_hstring(v_expected_tdata) & " | received : " & to_hstring(v_received_tdata));
 
-    v_a1 := v_a1_o;
-    v_a2 := v_a2_o;
-    v_a3 := v_a3_o;
+      if (v_received_tdata /= v_expected_tdata) then
+        v_flag := false;
+        info("TDATA ERROR | expected : " & to_hstring(v_expected_tdata) & " | received : " & to_hstring(v_received_tdata));
+      end if;
 
-    f_compression_phase(C_PERMUTATION_ARRAY_1, C_LIMIT_FOR_APPENDING_DUMMY_ROUND, ad_len, cp_len, v_a1, v_a2, v_a3, ad_i, cp_i, v_a1_o, v_a2_o, v_a3_o);
+      if (v_received_tkeep /= v_expected_tkeep) then
+        v_flag := false;
+        info("TKEEP ERROR | expected : " & to_hstring(v_expected_tkeep) & " | received : " & to_hstring(v_received_tkeep));
+      end if;
 
-    v_a1 := v_a1_o;
-    v_a2 := v_a2_o;
-    v_a3 := v_a3_o;
+      if (v_received_tlast /= v_expected_tlast) then
+        v_flag := false;
+        info("TLAST ERROR | expected : " & to_string(v_expected_tlast) & " | received : " & to_string(v_received_tlast));
+      end if;
 
-    p_init_phase(C_PERMUTATION_ARRAY_1, d, v_a1, v_a2, v_a3, v_a1_o, v_a2_o, v_a3_o);
-  end procedure p_smac_1;
+      if (v_received_tlast = '1') then
+        return v_flag;
+        exit POP_LOOP;
+      end if;
+    end loop POP_LOOP;
 
-  procedure p_smac_3_4(
-    is_ad_valid_i : std_logic;
-    is_cp_valid_i : std_logic;
-
-    a1_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    a2_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    a3_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    ad_i : in std_logic_vector; --associated data
-    cp_i : in std_logic_vector; --ciphertext data
-
-    a1_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    a2_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    a3_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
-  ) is
-    variable v_a1 : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    variable v_a2 : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    variable v_a3 : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-
-    variable v_a1_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    variable v_a2_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    variable v_a3_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-
-    variable v_d    : integer := 9; --turn this into a global constant
-    variable ad_len : integer;
-    variable cp_len : integer;
-
-    constant C_LIMIT_FOR_APPENDING_DUMMY_ROUND : integer := 3; --this constant is used for appending 1* into the compression phase.
-  begin
-    if (is_ad_valid_i = '1') then
-      ad_len := ad_i'length/8;
-    else
-      ad_len := 0;
-    end if;
-
-    if (is_cp_valid_i = '1') then
-      cp_len := cp_i'length/8;
-    else
-      cp_len := 0;
-    end if;
-
-    p_init_phase(C_PERMUTATION_ARRAY_42, v_d, a1_i, a2_i, a3_i, v_a1_o, v_a2_o, v_a3_o);
-
-    v_a1 := v_a1_o;
-    v_a2 := v_a2_o;
-    v_a3 := v_a3_o;
-
-    f_compression_phase(C_PERMUTATION_ARRAY_42, C_LIMIT_FOR_APPENDING_DUMMY_ROUND, ad_len, cp_len, v_a1, v_a2, v_a3, ad_i, cp_i, v_a1_o, v_a2_o, v_a3_o);
-
-    v_a1 := v_a1_o;
-    v_a2 := v_a2_o;
-    v_a3 := v_a3_o;
-
-    p_init_phase(C_PERMUTATION_ARRAY_42, v_d, v_a1, v_a2, v_a3, v_a1_o, v_a2_o, v_a3_o);
-  end procedure p_smac_3_4;
-
-  procedure p_smac_1_2(
-    is_ad_valid_i : std_logic;
-    is_cp_valid_i : std_logic;
-
-    a1_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    a2_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    a3_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    ad_i : in std_logic_vector; --associated data
-    cp_i : in std_logic_vector; --ciphertext data
-
-    a1_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    a2_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    a3_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
-  ) is
-    variable v_a1 : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    variable v_a2 : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    variable v_a3 : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-
-    variable v_a1_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    variable v_a2_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-    variable v_a3_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-
-    variable v_d    : integer := 9; --turn this into a global constant
-    variable ad_len : integer;
-    variable cp_len : integer;
-
-    constant C_LIMIT_FOR_APPENDING_DUMMY_ROUND : integer := 1; --this constant is used for appending 1* into the compression phase.
-  begin
-    if (is_ad_valid_i = '1') then
-      ad_len := ad_i'length/8;
-    else
-      ad_len := 0;
-    end if;
-
-    if (is_cp_valid_i = '1') then
-      cp_len := cp_i'length/8;
-    else
-      cp_len := 0;
-    end if;
-
-    p_init_phase(C_PERMUTATION_ARRAY_61, v_d, a1_i, a2_i, a3_i, v_a1_o, v_a2_o, v_a3_o);
-
-    v_a1 := v_a1_o;
-    v_a2 := v_a2_o;
-    v_a3 := v_a3_o;
-
-    f_compression_phase(C_PERMUTATION_ARRAY_61, C_LIMIT_FOR_APPENDING_DUMMY_ROUND, ad_len, cp_len, v_a1, v_a2, v_a3, ad_i, cp_i, v_a1_o, v_a2_o, v_a3_o);
-
-    v_a1 := v_a1_o;
-    v_a2 := v_a2_o;
-    v_a3 := v_a3_o;
-
-    p_init_phase(C_PERMUTATION_ARRAY_61, v_d, v_a1, v_a2, v_a3, v_a1_o, v_a2_o, v_a3_o);
-  end procedure p_smac_1_2;
-
+  end function f_compare_axis;
 begin
 
   -- clock and reset generation
@@ -550,6 +267,9 @@ begin
   rstn <= '1' after 10 * C_CLK_PERIOD;
 
   main : process
+    variable v_inp_word_que : queue_t := new_queue;
+    variable v_exp_word_que : queue_t := new_queue;
+
     variable v_a1   : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
     variable v_a2   : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
     variable v_a3   : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
@@ -559,6 +279,15 @@ begin
     variable v_a2_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
     variable v_a3_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
 
+    variable v_tdata      : std_logic_vector(C_DATA_WIDTH - 1 downto 0);
+    variable v_tkeep      : std_logic_vector(C_DATA_WIDTH/8 - 1 downto 0);
+    variable v_tlast      : std_logic;
+    variable v_queue_data : std_logic_vector(C_DATA_WIDTH + C_DATA_WIDTH/8 + 1 - 1 downto 0);
+
+    variable v_num_of_ad_bytes : integer;
+    variable v_num_of_cp_bytes : integer;
+
+    variable v_comp_flag : boolean;
   begin
     -- VUnit test runner setup
     test_runner_setup(runner, runner_cfg);
@@ -567,79 +296,125 @@ begin
     wait until rising_edge(clk);
 
     if run("test_0") then
-      v_a1 := x"00000000000000000000000000000000"; --key low
-      v_a2 := x"00000000000000000000000000000000"; --key high
-      v_a3 := x"00000000000000000000000000000000"; --iv
 
-      info("== TEST 1 ==");
-      info("KEY : " & to_hstring(v_a2 & v_a1));
-      info("IV  : " & to_hstring(v_a3));
-      info("AD  : null");
-      info("CP  : null");
-      info("For SMAC-1:");
-      p_smac_1('0', '0', v_a1, v_a2, v_a3, x"00", x"11", v_a1_o, v_a2_o, v_a3_o);
-      info("For SMAC-3/4:");
-      p_smac_3_4('0', '0', v_a1, v_a2, v_a3, x"00", x"11", v_a1_o, v_a2_o, v_a3_o);
-      info("For SMAC-1/2:");
-      p_smac_1_2('0', '0', v_a1, v_a2, v_a3, x"00", x"11", v_a1_o, v_a2_o, v_a3_o);
+      CP_LOOP : for i in 0 to 255 loop
+        AD_LOOP : for j in 1 to 255 loop --j=0 case should be corrected
+          v_num_of_cp_bytes := i;
+          v_num_of_ad_bytes := j;
 
-      v_a1 := x"00000000000000000000000000000000"; --key low
-      v_a2 := x"01000000000000000000000000000000"; --key high
-      v_a3 := x"02000000000000000000000000000000"; --iv
+          p_prep_packet(v_num_of_ad_bytes, v_num_of_cp_bytes, v_a1_o, v_a2_o, v_a3_o, v_inp_word_que, v_exp_word_que);
 
-      info("== TEST 2 ==");
-      info("KEY : " & to_hstring(v_a2 & v_a1));
-      info("IV  : " & to_hstring(v_a3));
-      info("AD  : 03");
-      info("CP  : null");
-      info("For SMAC-1:");
-      p_smac_1('1', '0', v_a1, v_a2, v_a3, x"03", x"11", v_a1_o, v_a2_o, v_a3_o);
-      info("For SMAC-3/4:");
-      p_smac_3_4('1', '0', v_a1, v_a2, v_a3, x"03", x"11", v_a1_o, v_a2_o, v_a3_o);
-      info("For SMAC-1/2:");
-      p_smac_1_2('1', '0', v_a1, v_a2, v_a3, x"03", x"11", v_a1_o, v_a2_o, v_a3_o);
+          a1_i <= v_a1_o;
+          a2_i <= v_a2_o;
+          a3_i <= v_a3_o;
+          wait until rising_edge(clk);
 
-      v_a1 := x"c0c1c2c3c4c5c6c7c8c9cacbcccdcecf"; --key low
-      v_a2 := x"b0b1b2b3b4b5b6b7b8b9babbbcbdbebf"; --key high
-      v_a3 := x"d0d1d2d3d4d5d6d7d8d9dadbdcdddedf"; --iv
-      --v_ad := x"e0e1e2e3e4e5e6e7e8e9eaebecdddeef";
-      --v_cp := x"f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff";
+          v_tlast := '0';
+          while(v_tlast = '0') loop
+            v_queue_data := pop_std_ulogic_vector(v_inp_word_que);
+            v_tdata      := v_queue_data(v_queue_data'left downto v_queue_data'length - C_DATA_WIDTH);
+            v_tkeep      := v_queue_data(v_queue_data'length - C_DATA_WIDTH - 1 downto 1);
+            v_tlast      := v_queue_data(0);
 
-      info("== TEST 3 ==");
-      info("KEY : " & to_hstring(v_a2 & v_a1));
-      info("IV  : " & to_hstring(v_a3));
-      info("AD  : e0e1e2e3e4e5e6e7e8e9eaebecdddeef");
-      info("CP  : f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff");
-      info("For SMAC-1:");
-      p_smac_1('1', '1', v_a1, v_a2, v_a3, x"e0e1e2e3e4e5e6e7e8e9eaebecdddeef", x"f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff", v_a1_o, v_a2_o, v_a3_o);
-      info("For SMAC-3/4:");
-      p_smac_3_4('1', '1', v_a1, v_a2, v_a3, x"e0e1e2e3e4e5e6e7e8e9eaebecdddeef", x"f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff", v_a1_o, v_a2_o, v_a3_o);
-      info("For SMAC-1/2:");
-      p_smac_1_2('1', '1', v_a1, v_a2, v_a3, x"e0e1e2e3e4e5e6e7e8e9eaebecdddeef", x"f0f1f2f3f4f5f6f7f8f9fafbfcfdfeff", v_a1_o, v_a2_o, v_a3_o);
+            push_axi_stream(net => net, axi_stream => master_axi_stream, tdata => v_tdata, tkeep => v_tkeep, tlast => v_tlast);
+          end loop;
 
-      v_a1 := x"101112131415161718191a1b1c1d1e1f"; --key low
-      v_a2 := x"000102030405060708090a0b0c0d0e0f"; --key high
-      v_a3 := x"fffefdfcfbfaf9f8f7f6f5f4f3f2f1f0"; --iv
-      --v_ad := x"0102030405060708090a0b0c0d0e0f10111213";
-      --v_cp := x"1415161718191a1b1c1d1e1f20";
+          wait until rising_edge(clk);
 
-      info("== TEST 4 ==");
-      info("KEY : " & to_hstring(v_a2 & v_a1));
-      info("IV  : " & to_hstring(v_a3));
-      info("AD  : 0102030405060708090a0b0c0d0e0f10111213");
-      info("CP  : 1415161718191a1b1c1d1e1f20");
-      info("For SMAC-1:");
-      p_smac_1('1', '1', v_a1, v_a2, v_a3, x"0102030405060708090a0b0c0d0e0f10111213", x"1415161718191a1b1c1d1e1f20", v_a1_o, v_a2_o, v_a3_o);
-      info("For SMAC-3/4:");
-      p_smac_3_4('1', '1', v_a1, v_a2, v_a3, x"0102030405060708090a0b0c0d0e0f10111213", x"1415161718191a1b1c1d1e1f20", v_a1_o, v_a2_o, v_a3_o);
-      info("For SMAC-1/2:");
-      p_smac_1_2('1', '1', v_a1, v_a2, v_a3, x"0102030405060708090a0b0c0d0e0f10111213", x"1415161718191a1b1c1d1e1f20", v_a1_o, v_a2_o, v_a3_o);
+          wait until m00_axis_tvalid = '1' and m00_axis_tready = '1' and m00_axis_tlast = '1' and rising_edge(clk);
+          wait until rising_edge(clk);
+          wait until rising_edge(clk);
+
+          v_comp_flag := f_compare_axis(v_exp_word_que);
+
+          if (v_comp_flag = FALSE) then
+            report "COMPARISON FALSE" severity ERROR;
+          end if;
+        end loop AD_LOOP;
+      end loop CP_LOOP;
+      wait for 100 * C_CLK_PERIOD;
+
     end if;
 
     -- VUnit test runner cleanup
     test_runner_cleanup(runner);
   end process;
 
+  POP_M_AXIS_DATA : process
+    variable v_tdata : std_logic_vector(C_M_AXIS_DATA_WIDTH - 1 downto 0);
+    variable v_tlast : std_logic;
+
+  begin
+    wait until rstn = '1';
+    loop
+      pop_axi_stream(
+      net        => net,
+      axi_stream => slave_axi_stream,
+      tdata      => v_tdata,
+      tlast      => v_tlast
+      );
+    end loop;
+  end process;
+
+  PUSH_M_AXIS_DATA : process
+    variable v_tkeep      : std_logic_vector(C_M_AXIS_DATA_WIDTH/8 - 1 downto 0) := (others => '1');
+    variable v_queue_data : std_logic_vector(C_M_AXIS_DATA_WIDTH + C_M_AXIS_DATA_WIDTH/8 + 1 - 1 downto 0);
+  begin
+    wait until m00_axis_tvalid = '1' and m00_axis_tready = '1' and rising_edge(clk);
+    v_queue_data := m00_axis_tdata & v_tkeep & m00_axis_tlast;
+    push_std_ulogic_vector(r_received_queue, v_queue_data);
+  end process;
+
   -- DUT instantiation
+  DUT_SMAC : entity work.smac
+    generic map(
+      G_SMAC_VARIANT   => 1,                   --! 1: SMAC-1 , 2: SMAC-1/2 , 3: SMAC-3/4
+      G_NUM_OF_STREAMS => 1,                   --! Number of parallel SMAC streams
+      G_TAG_WIDTH      => 3 * C_SMAC_REG_WIDTH --! Tag width in bits
+    )
+    port map(
+      clk_i  => clk,
+      rstn_i => rstn,
+
+      a1_i => a1_i,
+      a2_i => a2_i,
+      a3_i => a3_i,
+
+      s00_axis_tdata_i  => s00_axis_tdata,
+      s00_axis_tvalid_i => s00_axis_tvalid,
+      s00_axis_tready_o => s00_axis_tready,
+      s00_axis_tlast_i  => s00_axis_tlast,
+
+      m00_axis_tdata_o  => m00_axis_tdata,
+      m00_axis_tvalid_o => m00_axis_tvalid,
+      m00_axis_tready_i => m00_axis_tready,
+      m00_axis_tlast_o  => m00_axis_tlast --! Always '1' when tvalid is '1', since tag is single word.
+    );
+
+  axi_stream_master_inst : entity vunit_lib.axi_stream_master
+    generic map(
+      master => master_axi_stream
+    )
+    port map(
+      aclk     => clk,
+      areset_n => rstn,
+      tdata    => s00_axis_tdata,
+      tvalid   => s00_axis_tvalid,
+      tready   => s00_axis_tready,
+      tlast    => s00_axis_tlast
+    );
+
+  axi_stream_slave_inst : entity vunit_lib.axi_stream_slave
+    generic map(
+      slave => slave_axi_stream
+    )
+    port map(
+      aclk     => clk,
+      areset_n => rstn,
+      tdata    => m00_axis_tdata,
+      tvalid   => m00_axis_tvalid,
+      tready   => m00_axis_tready,
+      tlast    => m00_axis_tlast
+    );
 
 end architecture;

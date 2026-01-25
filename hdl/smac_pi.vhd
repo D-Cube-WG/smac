@@ -42,7 +42,7 @@ begin
     --! Use smac_perm instance here.
     --! Use two aes_round instances here.
 
-    U_XOR : entity work.smac_xor
+    U_XOR : entity work.smac_xor_3
         port map(
             --clk_i   :  in std_logic; --! Future Work: If there is critical path problem!  
             --rstn_i  :  in std_logic; --! Future Work: If there is critical path problem!  

@@ -25,7 +25,7 @@ tb_dir  = ROOT / "tb"
 hdl_files = [str(f.resolve()) for f in hdl_dir.glob("*.vhd")]
 tb_files = (
     [str(f.resolve()) for f in tb_dir.glob("tb_smac_pi.vhd")] +
-    [str(f.resolve()) for f in tb_dir.glob("pkg_aes.vhd")]
+    [str(f.resolve()) for f in tb_dir.glob("pkg_*.vhd")]
 )
 
 
