@@ -10,19 +10,22 @@ use ieee.numeric_std.all;
 
 entity smac is
     generic (
-        G_SMAC_VARIANT   : integer := 1;  --! 1: SMAC-1 , 2: SMAC-1/2 , 3: SMAC-3/4
-        G_NUM_OF_STREAMS : integer := 4;  --! Number of parallel SMAC streams
-        G_TAG_WIDTH      : integer := 384 --! Tag width in bits
+        G_SMAC_VARIANT        : integer := 1; --! 1: SMAC-1 , 2: SMAC-1/2 , 3: SMAC-3/4
+        G_NUM_OF_INIT_ROUNDS  : integer := 9;
+        G_NUM_OF_FINAL_ROUNDS : integer := 9;
+        G_SMAC_ID             : integer := 0 --used for aggregated mode
     );
     port (
         clk_i  : in std_logic;
         rstn_i : in std_logic;
 
+        is_finalization_phase_2 : in std_logic;
+
         a1_i : in std_logic_vector(127 downto 0); --assuming this will be valid with at the first tvalid and will be stable to until tlast.
         a2_i : in std_logic_vector(127 downto 0); --assuming this will be valid with at the first tvalid and will be stable to until tlast.
         a3_i : in std_logic_vector(127 downto 0); --assuming this will be valid with at the first tvalid and will be stable to until tlast.
 
-        s00_axis_tdata_i  : in std_logic_vector(G_NUM_OF_STREAMS * 128 - 1 downto 0);
+        s00_axis_tdata_i  : in std_logic_vector(127 downto 0);
         s00_axis_tvalid_i : in std_logic;
         s00_axis_tlast_i  : in std_logic;
         s00_axis_tready_o : out std_logic;
@@ -37,12 +40,9 @@ end entity smac;
 architecture rtl of smac is
 
     -- constant declarations
-    constant C_REG_WIDTH   : integer := 128;
-    constant C_INIT_ROUNDS : integer := 9;
+    constant C_REG_WIDTH : integer := 128;
 
-    constant C_KEY_WIDTH : integer                                    := 256;
-    constant C_IV_WIDTH  : integer                                    := 128;
-    constant C_ONE_STAR  : std_logic_vector(C_REG_WIDTH - 1 downto 0) := (C_REG_WIDTH - 1 downto C_REG_WIDTH - 8 => x"01", others => '0');
+    constant C_ONE_STAR : std_logic_vector(C_REG_WIDTH - 1 downto 0) := (C_REG_WIDTH - 1 downto C_REG_WIDTH - 8 => x"01", others => '0');
 
     -- type declarations
     type t_states is (ST_IDLE, ST_SMAC_INIT, ST_SMAC_COMPRESSION, ST_SMAC_FINALIZE, ST_SEND_SMAC_RESULT);
@@ -59,8 +59,7 @@ architecture rtl of smac is
     signal l_xor2_a2_o : std_logic_vector(C_REG_WIDTH - 1 downto 0);
     signal l_xor2_a3_o : std_logic_vector(C_REG_WIDTH - 1 downto 0);
 
-    signal r_first_message_i : std_logic_vector(C_REG_WIDTH - 1 downto 0);
-    signal r_message_i       : std_logic_vector(C_REG_WIDTH - 1 downto 0);
+    signal r_message_i : std_logic_vector(C_REG_WIDTH - 1 downto 0);
 
     signal r_xor2_0_inp_0_i : std_logic_vector(C_REG_WIDTH - 1 downto 0);
     signal r_xor2_1_inp_0_i : std_logic_vector(C_REG_WIDTH - 1 downto 0);
@@ -106,8 +105,7 @@ begin
             case state is
                 when ST_IDLE =>
                     --we are waiting for a valid word
-                    r_s00_axis_tready_o <= '1';
-                    if (s00_axis_tvalid_i = '1' and r_s00_axis_tready_o = '1') then
+                    if (s00_axis_tvalid_i = '1') or (is_finalization_phase_2 = '1' and G_SMAC_ID = 0) then
                         r_a1_i <= a1_i;
                         r_a2_i <= a2_i;
                         r_a3_i <= a3_i;
@@ -116,8 +114,7 @@ begin
                         r_xor2_1_inp_0_i <= a2_i;
                         r_xor2_2_inp_0_i <= a3_i;
 
-                        r_message_i       <= C_ONE_STAR;
-                        r_first_message_i <= s00_axis_tdata_i;
+                        r_message_i <= C_ONE_STAR;
 
                         r_s00_axis_tready_o <= '0';
                         r_counter           <= (others => '0');
@@ -127,20 +124,27 @@ begin
                 when ST_SMAC_INIT =>
                     r_counter <= r_counter + 1;
 
-                    if (r_counter = C_INIT_ROUNDS - 1) then
+                    if (r_counter = G_NUM_OF_INIT_ROUNDS - 1) then
                         r_a1_i <= l_xor2_a1_o;
                         r_a2_i <= l_xor2_a2_o;
                         r_a3_i <= l_xor2_a3_o;
 
-                        r_message_i <= r_first_message_i; --tvalid='1' when we are here
+                        r_message_i <= s00_axis_tdata_i; --tvalid='1' when we are here
+                        r_counter   <= (others => '0');
 
-                        r_s00_axis_tready_o <= '1';
-                        r_counter           <= (others => '0');
-                        state               <= ST_SMAC_COMPRESSION;
+                        if (is_finalization_phase_2 = '1') then
+                            state <= ST_SMAC_FINALIZE;
+                        else
+                            state <= ST_SMAC_COMPRESSION;
+                        end if;
                     else
                         r_a1_i <= l_pi_a1_o;
                         r_a2_i <= l_pi_a2_o;
                         r_a3_i <= l_pi_a3_o;
+
+                        if (r_counter = G_NUM_OF_INIT_ROUNDS - 2) then
+                            r_s00_axis_tready_o <= '1';
+                        end if;
                     end if;
 
                 when ST_SMAC_COMPRESSION =>
@@ -162,7 +166,7 @@ begin
                     r_message_i <= C_ONE_STAR;
 
                     r_counter <= r_counter + 1;
-                    if (r_counter = C_INIT_ROUNDS) then
+                    if (r_counter = G_NUM_OF_FINAL_ROUNDS) then
 
                         r_a1_i <= l_xor2_a1_o;
                         r_a2_i <= l_xor2_a2_o;

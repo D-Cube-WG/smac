@@ -20,8 +20,7 @@ end tb_smac_pi;
 
 architecture tb of tb_smac_pi is
     --constant declarations
-    constant C_DATA_WIDTH : integer := 8;
-    constant C_CLK_PERIOD : time    := 10 ns;
+    constant C_CLK_PERIOD : time := 10 ns;
 
     constant C_SMAC_VARIANT : integer := 1;
 
@@ -48,8 +47,6 @@ begin
         variable v_a1      : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         variable v_a2      : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         variable v_a3      : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        variable v_ad      : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        variable v_cp      : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         variable v_a1_o    : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         variable v_a2_o    : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         variable v_a3_o    : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
@@ -102,16 +99,19 @@ begin
 
                 wait for 0 ns;
                 --wait until rising_edge(clk);
+                info("expected a1_o : " & to_hstring(v_a1_o) & " received a1_o : " & to_hstring(a1_o));
                 if (v_a1_o /= a1_o) then
                     flag := 0;
                     info("ERROR | expected a1_o : " & to_hstring(v_a1_o) & " received a1_o : " & to_hstring(a1_o));
                 end if;
 
+                info("expected a2_o : " & to_hstring(v_a2_o) & " received a2_o : " & to_hstring(a2_o));
                 if (v_a2_o /= a2_o) then
                     flag := 0;
                     info("ERROR | expected a2_o : " & to_hstring(v_a2_o) & " received a2_o : " & to_hstring(a2_o));
                 end if;
 
+                info("expected a3_o : " & to_hstring(v_a3_o) & " received a3_o : " & to_hstring(a3_o));
                 if (v_a3_o /= a3_o) then
                     flag := 0;
                     info("ERROR | expected a3_o : " & to_hstring(v_a3_o) & " received a3_o : " & to_hstring(a3_o));

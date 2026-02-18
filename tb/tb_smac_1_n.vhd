@@ -13,15 +13,15 @@ use work.pkg_aes.all;
 use work.pkg_smac.all;
 use work.pkg_gnrl.all;
 
-entity tb_smac is
+entity tb_smac_1_n is
   generic (runner_cfg : string);
-end tb_smac;
+end tb_smac_1_n;
 
-architecture tb of tb_smac is
+architecture tb of tb_smac_1_n is
   --constant declarations
-  constant C_DATA_WIDTH        : integer := C_SMAC_REG_WIDTH;
+  constant C_DATA_WIDTH        : integer := 4 * C_SMAC_REG_WIDTH;
   constant C_WORD_WIDTH        : integer := C_DATA_WIDTH/8;
-  constant C_M_AXIS_DATA_WIDTH : integer := 3 * C_DATA_WIDTH;
+  constant C_M_AXIS_DATA_WIDTH : integer := 3 * C_SMAC_REG_WIDTH;
   constant C_M_AXIS_WORD_WIDTH : integer := 3 * C_DATA_WIDTH/8;
   constant C_CLK_PERIOD        : time    := 10 ns;
 
@@ -56,9 +56,9 @@ architecture tb of tb_smac is
   signal clk  : std_logic := '0';
   signal rstn : std_logic := '0';
 
-  signal a1_i : std_logic_vector(C_DATA_WIDTH - 1 downto 0);
-  signal a2_i : std_logic_vector(C_DATA_WIDTH - 1 downto 0);
-  signal a3_i : std_logic_vector(C_DATA_WIDTH - 1 downto 0);
+  signal a1_i : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+  signal a2_i : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+  signal a3_i : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
 
   signal s00_axis_tdata  : std_logic_vector(C_DATA_WIDTH - 1 downto 0);
   signal s00_axis_tvalid : std_logic;
@@ -245,6 +245,10 @@ begin
     variable v_num_of_cp_bytes : integer;
 
     variable v_comp_flag : boolean;
+    variable v_ad_vec    : std_logic_vector(15 downto 0) := x"AABB";
+    variable v_cp_vec    : std_logic_vector(31 downto 0) := x"CCDDEEFF";
+    variable v_smac_inp  : std_logic_vector(f_smac_input_vec_length_calculator(v_ad_vec, v_cp_vec) - 1 downto 0);
+
   begin
     -- VUnit test runner setup
     test_runner_setup(runner, runner_cfg);
@@ -323,31 +327,31 @@ begin
   end process;
 
   -- DUT instantiation
-  DUT_SMAC : entity work.smac
+  DUT_SMAC : entity work.smac_1_n
     generic map(
-      G_SMAC_VARIANT        => 1, --! 1: SMAC-1 , 2: SMAC-1/2 , 3: SMAC-3/4
+      G_DATA_WIDTH          => C_DATA_WIDTH,                  --! Data width in bits
+      G_SMAC_VARIANT        => 1,                             --! 1: SMAC-1 , 2: SMAC-1/2 , 3: SMAC-3/4
+      G_NUM_OF_STREAMS      => C_DATA_WIDTH/C_SMAC_REG_WIDTH, --! Number of parallel SMAC streams
       G_NUM_OF_INIT_ROUNDS  => 9,
-      G_NUM_OF_FINAL_ROUNDS => 9
+      G_NUM_OF_FINAL_ROUNDS => 6
     )
     port map(
       clk_i  => clk,
       rstn_i => rstn,
 
-      is_finalization_phase_2 => '0',
-
       a1_i => a1_i,
       a2_i => a2_i,
       a3_i => a3_i,
 
-      s00_axis_tdata_i  => s00_axis_tdata,
-      s00_axis_tvalid_i => s00_axis_tvalid,
-      s00_axis_tready_o => s00_axis_tready,
-      s00_axis_tlast_i  => s00_axis_tlast,
+      s_axis_tdata_i  => s00_axis_tdata,
+      s_axis_tvalid_i => s00_axis_tvalid,
+      s_axis_tready_o => s00_axis_tready,
+      s_axis_tlast_i  => s00_axis_tlast,
 
-      m00_axis_tdata_o  => m00_axis_tdata,
-      m00_axis_tvalid_o => m00_axis_tvalid,
-      m00_axis_tready_i => m00_axis_tready,
-      m00_axis_tlast_o  => m00_axis_tlast --! Always '1' when tvalid is '1', since tag is single word.
+      m_axis_tdata_o  => m00_axis_tdata,
+      m_axis_tvalid_o => m00_axis_tvalid,
+      m_axis_tready_i => m00_axis_tready,
+      m_axis_tlast_o  => m00_axis_tlast --! Always '1' when tvalid is '1', since tag is single word.
     );
 
   axi_stream_master_inst : entity vunit_lib.axi_stream_master

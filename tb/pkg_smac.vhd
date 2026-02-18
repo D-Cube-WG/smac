@@ -30,6 +30,11 @@ package pkg_smac is
         vec               : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
     ) return std_logic_vector;
 
+    function f_smac_input_vec_length_calculator(
+        ad_i : in std_logic_vector;
+        cp_i : in std_logic_vector
+    ) return integer;
+
     procedure p_smac_compression(
         permutation_array_i : in t_permutation_array;
         a1_i                : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
@@ -55,56 +60,53 @@ package pkg_smac is
     procedure p_compression_phase(
         permutation_array_i : in t_permutation_array;
         m_round_limit_i     : in integer; -- this variable is used for appending 1*. if m_round_limit_i=3 then process a block with m=1* after 3 round of message is processed.
-        num_of_ad_bytes_i   : in integer := 0;
-        num_of_cp_bytes_i   : in integer := 0;
         a1_i                : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         a2_i                : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         a3_i                : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        ad_i                : in std_logic_vector;
-        cp_i                : in std_logic_vector;
+        m_i                 : in std_logic_vector;
         a1_o                : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         a2_o                : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         a3_o                : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
     );
 
     procedure p_smac_1(
-        is_ad_valid_i : std_logic;
-        is_cp_valid_i : std_logic;
-        a1_i          : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        a2_i          : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        a3_i          : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        ad_i          : in std_logic_vector; --associated data
-        cp_i          : in std_logic_vector; --ciphertext data
-        a1_o          : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        a2_o          : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        a3_o          : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
+        init_phase_rounds_i  : in integer;
+        final_phase_rounds_i : in integer;
+        a1_i                 : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a2_i                 : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a3_i                 : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        m_i                  : in std_logic_vector; --message
+        a1_o                 : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a2_o                 : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a3_o                 : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
     );
 
     procedure p_smac_3_4(
-        is_ad_valid_i : std_logic;
-        is_cp_valid_i : std_logic;
-        a1_i          : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        a2_i          : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        a3_i          : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        ad_i          : in std_logic_vector; --associated data
-        cp_i          : in std_logic_vector; --ciphertext data
-        a1_o          : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        a2_o          : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        a3_o          : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
+        a1_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a2_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a3_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        m_i  : in std_logic_vector;
+        a1_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a2_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a3_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
     );
 
     procedure p_smac_1_2(
-        is_ad_valid_i : std_logic;
-        is_cp_valid_i : std_logic;
-        a1_i          : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        a2_i          : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        a3_i          : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        ad_i          : in std_logic_vector; --associated data
-        cp_i          : in std_logic_vector; --ciphertext data
-        a1_o          : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        a2_o          : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        a3_o          : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
+        a1_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a2_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a3_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        m_i  : in std_logic_vector;
+        a1_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a2_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a3_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
     );
+
+    procedure p_generate_smac_input_vector(
+        ad_i              : in std_logic_vector;
+        cp_i              : in std_logic_vector;
+        smac_input_vector : out std_logic_vector
+    );
+
 end package pkg_smac;
 
 package body pkg_smac is
@@ -122,6 +124,60 @@ package body pkg_smac is
         end loop;
         return new_vec;
     end function f_smac_permutation;
+
+    function f_smac_input_vec_length_calculator(
+        ad_i : in std_logic_vector;
+        cp_i : in std_logic_vector
+    ) return integer is
+        variable v_ad_leftover_bits : integer := C_SMAC_REG_WIDTH - (((ad_i'length - 1) mod C_SMAC_REG_WIDTH) + 1);
+        variable v_cp_leftover_bits : integer := C_SMAC_REG_WIDTH - (((cp_i'length - 1) mod C_SMAC_REG_WIDTH) + 1);
+
+        variable len : integer;
+    begin
+        len := ad_i'length + v_ad_leftover_bits + cp_i'length + v_cp_leftover_bits + C_SMAC_REG_WIDTH;
+        return len;
+    end function f_smac_input_vec_length_calculator;
+
+    procedure p_generate_smac_input_vector(
+        ad_i              : in std_logic_vector;
+        cp_i              : in std_logic_vector;
+        smac_input_vector : out std_logic_vector
+    ) is
+        variable v_ad_leftover_bits : integer := C_SMAC_REG_WIDTH - (((ad_i'length - 1) mod C_SMAC_REG_WIDTH) + 1);
+        variable v_cp_leftover_bits : integer := C_SMAC_REG_WIDTH - (((cp_i'length - 1) mod C_SMAC_REG_WIDTH) + 1);
+
+        variable v_ad_leftover_zeros : std_logic_vector(v_ad_leftover_bits - 1 downto 0) := (others => '0');
+        variable v_cp_leftover_zeros : std_logic_vector(v_cp_leftover_bits - 1 downto 0) := (others => '0');
+
+        variable v_ad_len_vector : std_logic_vector(C_SMAC_REG_WIDTH/2 - 1 downto 0);
+        variable v_cp_len_vector : std_logic_vector(C_SMAC_REG_WIDTH/2 - 1 downto 0);
+        variable v_len_vector    : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+
+        variable v_vec : std_logic_vector(ad_i'length + v_ad_leftover_bits + cp_i'length + v_cp_leftover_bits + C_SMAC_REG_WIDTH - 1 downto 0);
+    begin
+        v_ad_len_vector := f_swap_bytes(std_logic_vector(to_unsigned(ad_i'length, C_SMAC_REG_WIDTH/2)));
+        v_cp_len_vector := f_swap_bytes(std_logic_vector(to_unsigned(cp_i'length, C_SMAC_REG_WIDTH/2)));
+        v_len_vector    := v_ad_len_vector & v_cp_len_vector;
+
+        if (ad_i'length /= 0) then
+            v_vec := v_vec(v_vec'length - ad_i'length - 1 downto 0) & ad_i;
+
+            if (v_ad_leftover_bits /= 0) then
+                v_vec := v_vec(v_vec'length - v_ad_leftover_zeros'length - 1 downto 0) & v_ad_leftover_zeros;
+            end if;
+        end if;
+
+        if (cp_i'length /= 0) then
+            v_vec := v_vec(v_vec'length - cp_i'length - 1 downto 0) & cp_i;
+
+            if (v_cp_leftover_bits /= 0) then
+                v_vec := v_vec(v_vec'length - v_cp_leftover_zeros'length - 1 downto 0) & v_cp_leftover_zeros;
+            end if;
+        end if;
+
+        smac_input_vector := v_vec(v_vec'length - v_len_vector'length - 1 downto 0) & v_len_vector;
+
+    end procedure p_generate_smac_input_vector;
 
     procedure p_smac_compression(
         permutation_array_i : in t_permutation_array;
@@ -179,100 +235,53 @@ package body pkg_smac is
     procedure p_compression_phase(
         permutation_array_i : in t_permutation_array;
         m_round_limit_i     : in integer; -- this variable is used for appending 1*. if m_round_limit_i=3 then process a block with m=1* after 3 round of message is processed.
-        num_of_ad_bytes_i   : in integer := 0;
-        num_of_cp_bytes_i   : in integer := 0;
         a1_i                : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         a2_i                : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         a3_i                : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        ad_i                : in std_logic_vector;
-        cp_i                : in std_logic_vector;
+        m_i                 : in std_logic_vector;
         a1_o                : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         a2_o                : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         a3_o                : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
     ) is
-        variable v_a1_i             : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        variable v_a2_i             : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        variable v_a3_i             : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        variable v_a1_o             : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        variable v_a2_o             : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        variable v_a3_o             : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        variable v_m_block          : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        variable v_num_of_ad_blocks : integer := f_ceil(num_of_ad_bytes_i, 16);
-        variable v_num_of_cp_blocks : integer := f_ceil(num_of_cp_bytes_i, 16);
-        variable v_ad_i             : std_logic_vector(C_SMAC_REG_WIDTH * v_num_of_ad_blocks - 1 downto 0);
-        variable v_cp_i             : std_logic_vector(C_SMAC_REG_WIDTH * v_num_of_cp_blocks - 1 downto 0);
-        variable v_round_counter    : integer;
+        variable v_a1_i          : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        variable v_a2_i          : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        variable v_a3_i          : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        variable v_a1_o          : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        variable v_a2_o          : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        variable v_a3_o          : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        variable v_m_block       : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        variable v_round_counter : integer := 0;
+
+        variable v_num_of_blocks : integer := m_i'length/C_SMAC_REG_WIDTH;
     begin
         v_a1_i := a1_i;
         v_a2_i := a2_i;
         v_a3_i := a3_i;
-        --info("num_of_ad_bytes_i   : " & to_string(num_of_ad_bytes_i));
-        --info("num_of_cp_bytes_i   : " & to_string(num_of_cp_bytes_i));
-        --info("v_num_of_ad_blocks : " & to_string(v_num_of_ad_blocks));
-        --info("v_num_of_cp_blocks : " & to_string(v_num_of_cp_blocks));
+
         --info("BEFORE COMPRESSION PHASE | a1 : " & to_hstring(v_a1_i) & " | a2 : " & to_hstring(v_a2_i) & " | a3 : " & to_hstring(v_a3_i));
         --info("BEFORE COMPRESSION PHASE | ad : " & to_hstring(ad_i) & " | cp : " & to_hstring(cp_i));
-        v_round_counter := 0;
+        for i in 0 to v_num_of_blocks - 1 loop
+            v_m_block := m_i(m_i'left - i * C_SMAC_REG_WIDTH downto m_i'length - (i + 1) * C_SMAC_REG_WIDTH);
+            --info("v_m_block_ad  : " & to_hstring(v_m_block));
 
-        AD_BLOCKS : if (num_of_ad_bytes_i /= 0) then
-            v_ad_i := (v_ad_i'left downto v_ad_i'length - ad_i'length => ad_i, others => '0'); --generating a vector that is multiple of the block size and padding the lsb with zeros
-            for i in 0 to v_num_of_ad_blocks - 1 loop
-                v_m_block := v_ad_i(v_ad_i'left - i * C_SMAC_REG_WIDTH downto v_ad_i'length - (i + 1) * C_SMAC_REG_WIDTH);
-                --info("v_m_block_ad  : " & to_hstring(v_m_block));
-                p_smac_compression(permutation_array_i, v_a1_i, v_a2_i, v_a3_i, v_m_block, v_a1_o, v_a2_o, v_a3_o);
-                v_a1_i := v_a1_o;
-                v_a2_i := v_a2_o;
-                v_a3_i := v_a3_o;
-                --info("AD COMPRESSION PHASE | a1 : " & to_hstring(v_a1_i) & " | a2 : " & to_hstring(v_a2_i) & " | a3 : " & to_hstring(v_a3_i));
-                v_round_counter := v_round_counter + 1;
-                if (v_round_counter = m_round_limit_i) then
-                    v_round_counter := 0; --resetting counter
-                    v_m_block       := (v_m_block'left downto v_m_block'length - 8 => x"01", others => '0');
-                    p_smac_compression(permutation_array_i, v_a1_i, v_a2_i, v_a3_i, v_m_block, v_a1_o, v_a2_o, v_a3_o);
-                    v_a1_i := v_a1_o;
-                    v_a2_i := v_a2_o;
-                    v_a3_i := v_a3_o;
-                end if;
-            end loop;
-        end if;
-
-        CP_BLOCKS : if (num_of_cp_bytes_i /= 0) then
-            v_cp_i := (v_cp_i'left downto v_cp_i'length - cp_i'length => cp_i, others => '0'); --generating a vector that is multiple of the block size and padding the lsb with zeros
-            for i in 0 to v_num_of_cp_blocks - 1 loop
-                v_m_block := v_cp_i(v_cp_i'left - i * C_SMAC_REG_WIDTH downto v_cp_i'length - (i + 1) * C_SMAC_REG_WIDTH);
-                --info("v_m_block_cp  : " & to_hstring(v_m_block));
-                p_smac_compression(permutation_array_i, v_a1_i, v_a2_i, v_a3_i, v_m_block, v_a1_o, v_a2_o, v_a3_o);
-                v_a1_i := v_a1_o;
-                v_a2_i := v_a2_o;
-                v_a3_i := v_a3_o;
-                --info("CP COMPRESSION PHASE | a1 : " & to_hstring(v_a1_i) & " | a2 : " & to_hstring(v_a2_i) & " | a3 : " & to_hstring(v_a3_i));
-                v_round_counter := v_round_counter + 1;
-                if (v_round_counter = m_round_limit_i) then
-                    v_round_counter := 0; --resetting counter
-                    v_m_block       := (v_m_block'left downto v_m_block'length - 8 => x"01", others => '0');
-                    p_smac_compression(permutation_array_i, v_a1_i, v_a2_i, v_a3_i, v_m_block, v_a1_o, v_a2_o, v_a3_o);
-                    v_a1_i := v_a1_o;
-                    v_a2_i := v_a2_o;
-                    v_a3_i := v_a3_o;
-                end if;
-            end loop;
-        end if;
-
-        v_m_block(C_SMAC_REG_WIDTH - 1 downto C_SMAC_REG_WIDTH/2) := std_logic_vector(to_unsigned(num_of_ad_bytes_i * 8, C_SMAC_REG_WIDTH/2)); --size-in-bits
-        v_m_block(C_SMAC_REG_WIDTH/2 - 1 downto 0)                := std_logic_vector(to_unsigned(num_of_cp_bytes_i * 8, C_SMAC_REG_WIDTH/2)); --size-in-bits
-        v_m_block(C_SMAC_REG_WIDTH - 1 downto C_SMAC_REG_WIDTH/2) := f_swap_bytes(v_m_block(C_SMAC_REG_WIDTH - 1 downto C_SMAC_REG_WIDTH/2));
-        v_m_block(C_SMAC_REG_WIDTH/2 - 1 downto 0)                := f_swap_bytes(v_m_block(C_SMAC_REG_WIDTH/2 - 1 downto 0));
-        --info("v_m_block_len : " & to_hstring(v_m_block));
-        p_smac_compression(permutation_array_i, v_a1_i, v_a2_i, v_a3_i, v_m_block, v_a1_o, v_a2_o, v_a3_o);
-        v_round_counter := v_round_counter + 1;
-        if (v_round_counter = m_round_limit_i) then
-            v_a1_i          := v_a1_o;
-            v_a2_i          := v_a2_o;
-            v_a3_i          := v_a3_o;
-            v_round_counter := 0; --resetting counter
-            v_m_block       := (v_m_block'left downto v_m_block'length - 8 => x"01", others => '0');
             p_smac_compression(permutation_array_i, v_a1_i, v_a2_i, v_a3_i, v_m_block, v_a1_o, v_a2_o, v_a3_o);
-        end if;
+
+            v_a1_i := v_a1_o;
+            v_a2_i := v_a2_o;
+            v_a3_i := v_a3_o;
+            --info("AD COMPRESSION PHASE | a1 : " & to_hstring(v_a1_i) & " | a2 : " & to_hstring(v_a2_i) & " | a3 : " & to_hstring(v_a3_i));
+
+            v_round_counter := v_round_counter + 1;
+            if (v_round_counter = m_round_limit_i) then
+                v_round_counter := 0; --resetting counter
+                v_m_block       := (v_m_block'left downto v_m_block'length - 8 => x"01", others => '0');
+                p_smac_compression(permutation_array_i, v_a1_i, v_a2_i, v_a3_i, v_m_block, v_a1_o, v_a2_o, v_a3_o);
+                v_a1_i := v_a1_o;
+                v_a2_i := v_a2_o;
+                v_a3_i := v_a3_o;
+            end if;
+        end loop;
+
         a1_o := v_a1_o;
         a2_o := v_a2_o;
         a3_o := v_a3_o;
@@ -280,16 +289,15 @@ package body pkg_smac is
     end procedure p_compression_phase;
 
     procedure p_smac_1(
-        is_ad_valid_i : std_logic;
-        is_cp_valid_i : std_logic;
-        a1_i          : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        a2_i          : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        a3_i          : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        ad_i          : in std_logic_vector; --associated data
-        cp_i          : in std_logic_vector; --ciphertext data
-        a1_o          : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        a2_o          : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        a3_o          : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
+        init_phase_rounds_i  : in integer;
+        final_phase_rounds_i : in integer;
+        a1_i                 : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a2_i                 : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a3_i                 : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        m_i                  : in std_logic_vector; --message
+        a1_o                 : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a2_o                 : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a3_o                 : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
     ) is
         variable v_a1                              : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         variable v_a2                              : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
@@ -297,46 +305,35 @@ package body pkg_smac is
         variable v_a1_o                            : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         variable v_a2_o                            : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         variable v_a3_o                            : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        constant d                                 : integer := 9; --turn this into a global constant
-        variable ad_len                            : integer;
-        variable cp_len                            : integer;
         constant C_LIMIT_FOR_APPENDING_DUMMY_ROUND : integer := 0; --this constant is used for appending 1* into the compression phase. 0:dont append any dummy rounds
     begin
-        if (is_ad_valid_i = '1') then
-            ad_len := ad_i'length/8;
-        else
-            ad_len := 0;
-        end if;
-        if (is_cp_valid_i = '1') then
-            cp_len := cp_i'length/8;
-        else
-            cp_len := 0;
-        end if;
-        p_init_phase(C_PERMUTATION_ARRAY_1, d, a1_i, a2_i, a3_i, v_a1_o, v_a2_o, v_a3_o);
+
+        p_init_phase(C_PERMUTATION_ARRAY_1, init_phase_rounds_i, a1_i, a2_i, a3_i, v_a1_o, v_a2_o, v_a3_o);
+
         v_a1 := v_a1_o;
         v_a2 := v_a2_o;
         v_a3 := v_a3_o;
-        p_compression_phase(C_PERMUTATION_ARRAY_1, C_LIMIT_FOR_APPENDING_DUMMY_ROUND, ad_len, cp_len, v_a1, v_a2, v_a3, ad_i, cp_i, v_a1_o, v_a2_o, v_a3_o);
+
+        p_compression_phase(C_PERMUTATION_ARRAY_1, C_LIMIT_FOR_APPENDING_DUMMY_ROUND, v_a1, v_a2, v_a3, m_i, v_a1_o, v_a2_o, v_a3_o);
+
         v_a1 := v_a1_o;
         v_a2 := v_a2_o;
         v_a3 := v_a3_o;
-        p_init_phase(C_PERMUTATION_ARRAY_1, d, v_a1, v_a2, v_a3, v_a1_o, v_a2_o, v_a3_o);
+
+        p_init_phase(C_PERMUTATION_ARRAY_1, final_phase_rounds_i, v_a1, v_a2, v_a3, v_a1_o, v_a2_o, v_a3_o);
         a1_o := v_a1_o;
         a2_o := v_a2_o;
         a3_o := v_a3_o;
     end procedure p_smac_1;
 
     procedure p_smac_3_4(
-        is_ad_valid_i : std_logic;
-        is_cp_valid_i : std_logic;
-        a1_i          : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        a2_i          : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        a3_i          : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        ad_i          : in std_logic_vector; --associated data
-        cp_i          : in std_logic_vector; --ciphertext data
-        a1_o          : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        a2_o          : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        a3_o          : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
+        a1_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a2_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a3_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        m_i  : in std_logic_vector;
+        a1_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a2_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a3_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
     ) is
         variable v_a1                              : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         variable v_a2                              : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
@@ -345,25 +342,13 @@ package body pkg_smac is
         variable v_a2_o                            : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         variable v_a3_o                            : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         variable v_d                               : integer := 9; --turn this into a global constant
-        variable ad_len                            : integer;
-        variable cp_len                            : integer;
         constant C_LIMIT_FOR_APPENDING_DUMMY_ROUND : integer := 3; --this constant is used for appending 1* into the compression phase.
     begin
-        if (is_ad_valid_i = '1') then
-            ad_len := ad_i'length/8;
-        else
-            ad_len := 0;
-        end if;
-        if (is_cp_valid_i = '1') then
-            cp_len := cp_i'length/8;
-        else
-            cp_len := 0;
-        end if;
         p_init_phase(C_PERMUTATION_ARRAY_42, v_d, a1_i, a2_i, a3_i, v_a1_o, v_a2_o, v_a3_o);
         v_a1 := v_a1_o;
         v_a2 := v_a2_o;
         v_a3 := v_a3_o;
-        p_compression_phase(C_PERMUTATION_ARRAY_42, C_LIMIT_FOR_APPENDING_DUMMY_ROUND, ad_len, cp_len, v_a1, v_a2, v_a3, ad_i, cp_i, v_a1_o, v_a2_o, v_a3_o);
+        p_compression_phase(C_PERMUTATION_ARRAY_42, C_LIMIT_FOR_APPENDING_DUMMY_ROUND, v_a1, v_a2, v_a3, m_i, v_a1_o, v_a2_o, v_a3_o);
         v_a1 := v_a1_o;
         v_a2 := v_a2_o;
         v_a3 := v_a3_o;
@@ -374,16 +359,13 @@ package body pkg_smac is
     end procedure p_smac_3_4;
 
     procedure p_smac_1_2(
-        is_ad_valid_i : std_logic;
-        is_cp_valid_i : std_logic;
-        a1_i          : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        a2_i          : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        a3_i          : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        ad_i          : in std_logic_vector; --associated data
-        cp_i          : in std_logic_vector; --ciphertext data
-        a1_o          : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        a2_o          : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        a3_o          : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
+        a1_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a2_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a3_i : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        m_i  : in std_logic_vector;
+        a1_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a2_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a3_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
     ) is
         variable v_a1                              : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         variable v_a2                              : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
@@ -392,25 +374,14 @@ package body pkg_smac is
         variable v_a2_o                            : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         variable v_a3_o                            : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         variable v_d                               : integer := 9; --turn this into a global constant
-        variable ad_len                            : integer;
-        variable cp_len                            : integer;
         constant C_LIMIT_FOR_APPENDING_DUMMY_ROUND : integer := 1; --this constant is used for appending 1* into the compression phase.
     begin
-        if (is_ad_valid_i = '1') then
-            ad_len := ad_i'length/8;
-        else
-            ad_len := 0;
-        end if;
-        if (is_cp_valid_i = '1') then
-            cp_len := cp_i'length/8;
-        else
-            cp_len := 0;
-        end if;
+
         p_init_phase(C_PERMUTATION_ARRAY_61, v_d, a1_i, a2_i, a3_i, v_a1_o, v_a2_o, v_a3_o);
         v_a1 := v_a1_o;
         v_a2 := v_a2_o;
         v_a3 := v_a3_o;
-        p_compression_phase(C_PERMUTATION_ARRAY_61, C_LIMIT_FOR_APPENDING_DUMMY_ROUND, ad_len, cp_len, v_a1, v_a2, v_a3, ad_i, cp_i, v_a1_o, v_a2_o, v_a3_o);
+        p_compression_phase(C_PERMUTATION_ARRAY_61, C_LIMIT_FOR_APPENDING_DUMMY_ROUND, v_a1, v_a2, v_a3, m_i, v_a1_o, v_a2_o, v_a3_o);
         v_a1 := v_a1_o;
         v_a2 := v_a2_o;
         v_a3 := v_a3_o;
@@ -419,6 +390,34 @@ package body pkg_smac is
         a2_o := v_a2_o;
         a3_o := v_a3_o;
     end procedure p_smac_1_2;
+
+    procedure p_smac_n(
+        num_of_streams_i : in integer;
+        a1_i             : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a2_i             : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a3_i             : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        m_i              : in std_logic_vector; --message
+        a1_o             : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a2_o             : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a3_o             : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
+    ) is
+
+    begin
+
+        for i in 0 to num_of_streams_i - 1 loop
+            p_smac_1(
+            init_phase_rounds_i  => 9,
+            final_phase_rounds_i => 6,
+            a1_i                 => a1_i,
+            a2_i                 => a2_i,
+            a3_i                 => a3_i,
+            m_i                  => m_i,
+            a1_o                 => a1_o,
+            a2_o                 => a2_o,
+            a3_o                 => a3_o
+            );
+        end loop;
+    end procedure p_smac_n;
 
     --if run("test_0") then
     --    v_a1 := x"00000000000000000000000000000000"; --key low
