@@ -144,16 +144,15 @@ architecture tb of tb_smac_1_n is
     a2_o := v_a2;
     a3_o := v_a3;
 
-    p_smac_1(
-    init_phase_rounds_i  => 9,
-    final_phase_rounds_i => 9,
-    a1_i                 => v_a1,
-    a2_i                 => v_a2,
-    a3_i                 => v_a3,
-    m_i                  => v_smac_inp,
-    a1_o                 => v_a1_o,
-    a2_o                 => v_a2_o,
-    a3_o                 => v_a3_o
+    p_smac_n(
+    num_of_streams_i => 4,
+    a1_i             => v_a1,
+    a2_i             => v_a2,
+    a3_i             => v_a3,
+    m_i              => v_smac_inp,
+    a1_o             => v_a1_o,
+    a2_o             => v_a2_o,
+    a3_o             => v_a3_o
     );
 
     --generating

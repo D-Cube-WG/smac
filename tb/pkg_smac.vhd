@@ -12,8 +12,11 @@ use work.pkg_gnrl.all;
 package pkg_smac is
     --constant declarations
     constant C_SMAC_REG_WIDTH : integer := 128;
+
     --permutations
     type t_permutation_array is array (0 to 15) of integer;
+    type t_reg_array is array (0 to 15) of std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+
     --type t_permutation_arrays is array (natural range <>) of t_permutation_array; --this will be used when all of the permutations are written as constants
     constant C_PERMUTATION_ARRAY_1 : t_permutation_array := (
         0 => 0, 1 => 7, 2 => 14, 3 => 11, 4 => 4, 5 => 13, 6 => 10, 7 => 1, 8 => 8, 9 => 15, 10 => 6, 11 => 3, 12 => 12, 13 => 5, 14 => 2, 15 => 9
@@ -34,6 +37,12 @@ package pkg_smac is
         ad_i : in std_logic_vector;
         cp_i : in std_logic_vector
     ) return integer;
+
+    procedure p_generate_smac_input_vector(
+        ad_i              : in std_logic_vector;
+        cp_i              : in std_logic_vector;
+        smac_input_vector : out std_logic_vector
+    );
 
     procedure p_smac_compression(
         permutation_array_i : in t_permutation_array;
@@ -101,10 +110,15 @@ package pkg_smac is
         a3_o : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
     );
 
-    procedure p_generate_smac_input_vector(
-        ad_i              : in std_logic_vector;
-        cp_i              : in std_logic_vector;
-        smac_input_vector : out std_logic_vector
+    procedure p_smac_n(
+        num_of_streams_i : in integer;
+        a1_i             : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a2_i             : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a3_i             : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        m_i              : in std_logic_vector; --message
+        a1_o             : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a2_o             : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        a3_o             : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
     );
 
 end package pkg_smac;
@@ -401,22 +415,85 @@ package body pkg_smac is
         a2_o             : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         a3_o             : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
     ) is
+        variable v_iv_base    : std_logic_vector(3 downto 0) := std_logic_vector(to_unsigned((num_of_streams_i - 1), 4));
+        variable v_iv_k       : std_logic_vector(3 downto 0);
+        variable v_iv_msb     : std_logic_vector(7 downto 0);
+        variable v_iv_array   : t_reg_array;
+        variable v_a1_o_array : t_reg_array;
+        variable v_a2_o_array : t_reg_array;
+        variable v_a3_o_array : t_reg_array;
+        variable v_xor_inp    : std_logic_vector(3 * C_SMAC_REG_WIDTH - 1 downto 0);
+        variable v_xor_result : std_logic_vector(3 * C_SMAC_REG_WIDTH - 1 downto 0);
 
+        variable v_a1_i : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        variable v_a2_i : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        variable v_a3_i : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+
+        variable v_a1_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        variable v_a2_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        variable v_a3_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
     begin
 
+        info("a1_i | key_1 = " & to_hstring(a1_i));
+        info("a2_i | key_0 = " & to_hstring(a2_i));
+        info("a3_i | iv    = " & to_hstring(a3_i));
+        info("****************************************************************");
+
         for i in 0 to num_of_streams_i - 1 loop
+            v_iv_k        := std_logic_vector(to_unsigned(i, 4));
+            v_iv_msb      := v_iv_base & v_iv_k;
+            v_iv_array(i) := v_iv_msb & a3_i(C_SMAC_REG_WIDTH - 8 - 1 downto 0);
+            info("v_iv_array( " & to_string(i) & " ) = " & to_hstring(v_iv_array(i)));
+
             p_smac_1(
             init_phase_rounds_i  => 9,
             final_phase_rounds_i => 6,
-            a1_i                 => a1_i,
-            a2_i                 => a2_i,
-            a3_i                 => a3_i,
-            m_i                  => m_i,
-            a1_o                 => a1_o,
-            a2_o                 => a2_o,
-            a3_o                 => a3_o
+
+            a1_i => a1_i,
+            a2_i => a2_i,
+            a3_i => v_iv_array(i),
+            m_i  => m_i,
+
+            a1_o => v_a1_o_array(i),
+            a2_o => v_a2_o_array(i),
+            a3_o => v_a3_o_array(i)
             );
+
+            info("v_a1_o_array( " & to_string(i) & " ) = " & to_hstring(v_a1_o_array(i)));
+            info("v_a2_o_array( " & to_string(i) & " ) = " & to_hstring(v_a2_o_array(i)));
+            info("v_a3_o_array( " & to_string(i) & " ) = " & to_hstring(v_a3_o_array(i)));
+            info("----------------------------------------------------------------");
+
         end loop;
+
+        v_xor_result := (others => '0');
+        for i in 0 to num_of_streams_i - 1 loop
+            v_xor_inp(3 * C_SMAC_REG_WIDTH - 1 downto 2 * C_SMAC_REG_WIDTH) := std_logic_vector(v_a1_o_array(i));
+            v_xor_inp(2 * C_SMAC_REG_WIDTH - 1 downto 1 * C_SMAC_REG_WIDTH) := std_logic_vector(v_a2_o_array(i));
+            v_xor_inp(1 * C_SMAC_REG_WIDTH - 1 downto 0 * C_SMAC_REG_WIDTH) := std_logic_vector(v_a3_o_array(i));
+
+            v_xor_result := v_xor_result xor v_xor_inp;
+        end loop;
+
+        info("v_xor_result = " & to_hstring(v_xor_result));
+
+        v_a1_i := v_xor_result(3 * C_SMAC_REG_WIDTH - 1 downto 2 * C_SMAC_REG_WIDTH);
+        v_a2_i := v_xor_result(2 * C_SMAC_REG_WIDTH - 1 downto 1 * C_SMAC_REG_WIDTH);
+        v_a3_i := v_xor_result(1 * C_SMAC_REG_WIDTH - 1 downto 0 * C_SMAC_REG_WIDTH);
+
+        info("v_a1_i | key_1 = " & to_hstring(v_a1_i));
+        info("v_a2_i | key_0 = " & to_hstring(v_a2_i));
+        info("v_a3_i | iv    = " & to_hstring(v_a3_i));
+
+        p_init_phase(C_PERMUTATION_ARRAY_1, 9, v_a1_i, v_a2_i, v_a3_i, v_a1_o, v_a2_o, v_a3_o);
+
+        a1_o := v_a1_o;
+        a2_o := v_a2_o;
+        a3_o := v_a3_o;
+
+        info("a1_o = " & to_hstring(a1_o));
+        info("a2_o = " & to_hstring(a2_o));
+        info("a3_o = " & to_hstring(a3_o));
     end procedure p_smac_n;
 
     --if run("test_0") then
