@@ -25,6 +25,8 @@ architecture tb of tb_smac is
   constant C_M_AXIS_WORD_WIDTH : integer := 3 * C_DATA_WIDTH/8;
   constant C_CLK_PERIOD        : time    := 10 ns;
 
+  constant C_NUM_OF_STREAMS : integer := 4;
+
   constant C_M_AXIS_STALL_CONFIG : stall_config_t := (
     stall_probability => 0.5,
     min_stall_cycles  => 1,
@@ -96,7 +98,7 @@ architecture tb of tb_smac is
     variable v_payload_ad : std_logic_vector(8 * ad_length_i - 1 downto 0);
     variable v_payload_cp : std_logic_vector(8 * cp_length_i - 1 downto 0);
 
-    variable v_smac_inp : std_logic_vector(f_smac_input_vec_length_calculator(v_payload_ad, v_payload_cp) - 1 downto 0);
+    variable v_smac_inp : std_logic_vector(f_smac_input_vec_length_calculator(C_NUM_OF_STREAMS, v_payload_ad, v_payload_cp) - 1 downto 0);
 
     variable rnd_seed : integer := 0;
     variable len      : integer := 0;
@@ -127,7 +129,7 @@ architecture tb of tb_smac is
       rnd_seed     := rnd_seed + 1;
     end if;
 
-    p_generate_smac_input_vector(v_payload_ad, v_payload_cp, v_smac_inp);
+    p_generate_smac_input_vector(C_NUM_OF_STREAMS, v_payload_ad, v_payload_cp, v_smac_inp);
 
     --info("v_payload_ad : " & to_hstring(v_payload_ad));
     --info("v_payload_cp : " & to_hstring(v_payload_cp));

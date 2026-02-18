@@ -34,11 +34,13 @@ package pkg_smac is
     ) return std_logic_vector;
 
     function f_smac_input_vec_length_calculator(
-        ad_i : in std_logic_vector;
-        cp_i : in std_logic_vector
+        num_of_streams_i : in integer;
+        ad_i             : in std_logic_vector;
+        cp_i             : in std_logic_vector
     ) return integer;
 
     procedure p_generate_smac_input_vector(
+        num_of_streams_i  : in integer;
         ad_i              : in std_logic_vector;
         cp_i              : in std_logic_vector;
         smac_input_vector : out std_logic_vector
@@ -140,19 +142,26 @@ package body pkg_smac is
     end function f_smac_permutation;
 
     function f_smac_input_vec_length_calculator(
-        ad_i : in std_logic_vector;
-        cp_i : in std_logic_vector
+        num_of_streams_i : in integer;
+        ad_i             : in std_logic_vector;
+        cp_i             : in std_logic_vector
     ) return integer is
         variable v_ad_leftover_bits : integer := C_SMAC_REG_WIDTH - (((ad_i'length - 1) mod C_SMAC_REG_WIDTH) + 1);
         variable v_cp_leftover_bits : integer := C_SMAC_REG_WIDTH - (((cp_i'length - 1) mod C_SMAC_REG_WIDTH) + 1);
 
-        variable len : integer;
+        variable message_len  : integer;
+        variable padded_bytes : integer;
+        variable padded_len   : integer;
     begin
-        len := ad_i'length + v_ad_leftover_bits + cp_i'length + v_cp_leftover_bits + C_SMAC_REG_WIDTH;
-        return len;
+        message_len  := ad_i'length + v_ad_leftover_bits + cp_i'length + v_cp_leftover_bits + C_SMAC_REG_WIDTH;
+        padded_bytes := 128 * num_of_streams_i - (((message_len - 1) mod (128 * num_of_streams_i)) + 1);
+
+        padded_len := message_len + padded_bytes;
+        return padded_len;
     end function f_smac_input_vec_length_calculator;
 
     procedure p_generate_smac_input_vector(
+        num_of_streams_i  : in integer;
         ad_i              : in std_logic_vector;
         cp_i              : in std_logic_vector;
         smac_input_vector : out std_logic_vector
@@ -163,17 +172,25 @@ package body pkg_smac is
         variable v_ad_leftover_zeros : std_logic_vector(v_ad_leftover_bits - 1 downto 0) := (others => '0');
         variable v_cp_leftover_zeros : std_logic_vector(v_cp_leftover_bits - 1 downto 0) := (others => '0');
 
+        variable v_valid_bits   : integer := ad_i'length + v_ad_leftover_bits + cp_i'length + v_cp_leftover_bits + C_SMAC_REG_WIDTH;
+        variable v_round_size   : integer := num_of_streams_i * C_SMAC_REG_WIDTH;
+        variable v_invalid_bits : integer := v_round_size - (((v_valid_bits - 1) mod v_round_size) + 1);
+
+        variable v_zero_padding : std_logic_vector(v_invalid_bits - 1 downto 0) := (others => '0');
+
         variable v_ad_len_vector : std_logic_vector(C_SMAC_REG_WIDTH/2 - 1 downto 0);
         variable v_cp_len_vector : std_logic_vector(C_SMAC_REG_WIDTH/2 - 1 downto 0);
         variable v_len_vector    : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
 
-        variable v_vec : std_logic_vector(ad_i'length + v_ad_leftover_bits + cp_i'length + v_cp_leftover_bits + C_SMAC_REG_WIDTH - 1 downto 0);
+        variable v_vec : std_logic_vector(ad_i'length + v_ad_leftover_bits + cp_i'length + v_cp_leftover_bits + C_SMAC_REG_WIDTH + v_invalid_bits - 1 downto 0);
+
     begin
+
         v_ad_len_vector := f_swap_bytes(std_logic_vector(to_unsigned(ad_i'length, C_SMAC_REG_WIDTH/2)));
         v_cp_len_vector := f_swap_bytes(std_logic_vector(to_unsigned(cp_i'length, C_SMAC_REG_WIDTH/2)));
         v_len_vector    := v_ad_len_vector & v_cp_len_vector;
 
-        if (ad_i'length /= 0) then
+        if (ad_i'length > 0) then
             v_vec := v_vec(v_vec'length - ad_i'length - 1 downto 0) & ad_i;
 
             if (v_ad_leftover_bits /= 0) then
@@ -181,7 +198,7 @@ package body pkg_smac is
             end if;
         end if;
 
-        if (cp_i'length /= 0) then
+        if (cp_i'length > 0) then
             v_vec := v_vec(v_vec'length - cp_i'length - 1 downto 0) & cp_i;
 
             if (v_cp_leftover_bits /= 0) then
@@ -189,8 +206,13 @@ package body pkg_smac is
             end if;
         end if;
 
-        smac_input_vector := v_vec(v_vec'length - v_len_vector'length - 1 downto 0) & v_len_vector;
+        v_vec := v_vec(v_vec'length - v_len_vector'length - 1 downto 0) & v_len_vector;
 
+        if (v_invalid_bits > 0) then
+            v_vec := v_vec(v_vec'length - v_zero_padding'length - 1 downto 0) & v_zero_padding;
+        end if;
+
+        smac_input_vector := v_vec;
     end procedure p_generate_smac_input_vector;
 
     procedure p_smac_compression(
@@ -415,13 +437,15 @@ package body pkg_smac is
         a2_o             : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         a3_o             : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
     ) is
-        variable v_iv_base    : std_logic_vector(3 downto 0) := std_logic_vector(to_unsigned((num_of_streams_i - 1), 4));
-        variable v_iv_k       : std_logic_vector(3 downto 0);
-        variable v_iv_msb     : std_logic_vector(7 downto 0);
+        variable v_iv_base : std_logic_vector(3 downto 0) := std_logic_vector(to_unsigned((num_of_streams_i - 1), 4));
+        variable v_iv_k    : std_logic_vector(3 downto 0);
+        variable v_iv_msb  : std_logic_vector(7 downto 0);
+
         variable v_iv_array   : t_reg_array;
         variable v_a1_o_array : t_reg_array;
         variable v_a2_o_array : t_reg_array;
         variable v_a3_o_array : t_reg_array;
+
         variable v_xor_inp    : std_logic_vector(3 * C_SMAC_REG_WIDTH - 1 downto 0);
         variable v_xor_result : std_logic_vector(3 * C_SMAC_REG_WIDTH - 1 downto 0);
 
@@ -434,9 +458,10 @@ package body pkg_smac is
         variable v_a3_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
     begin
 
-        info("a1_i | key_1 = " & to_hstring(a1_i));
-        info("a2_i | key_0 = " & to_hstring(a2_i));
-        info("a3_i | iv    = " & to_hstring(a3_i));
+        info("a1_i | key_1   = " & to_hstring(a1_i));
+        info("a2_i | key_0   = " & to_hstring(a2_i));
+        info("a3_i | iv      = " & to_hstring(a3_i));
+        info("m_i  | message = " & to_hstring(m_i));
         info("****************************************************************");
 
         for i in 0 to num_of_streams_i - 1 loop

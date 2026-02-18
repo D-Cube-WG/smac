@@ -1,0 +1,112 @@
+number of ad bytes : 16*6
+
+#        105000 ps - default                  -    INFO - a1_i | key_1   = FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+#        105000 ps - default                  -    INFO - a2_i | key_0   = FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+#        105000 ps - default                  -    INFO - a3_i | iv      = FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+#        105000 ps - default                  -    INFO - m_i  | message = FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0003000000000000000000000000000000000000000000000000000000000000
+#        105000 ps - default                  -    INFO - ****************************************************************
+#        105000 ps - default                  -    INFO - v_iv_array( 0 ) = 30FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+#        105000 ps - default                  -    INFO - v_a1_o_array( 0 ) = 7A7EBD6681226E9D81A6D5C563238357
+#        105000 ps - default                  -    INFO - v_a2_o_array( 0 ) = F656EFB3C7EE8F1397C513D6B01CD323
+#        105000 ps - default                  -    INFO - v_a3_o_array( 0 ) = 182E8C529D7944C9FAADA48ACAC8BABC
+#        105000 ps - default                  -    INFO - ----------------------------------------------------------------
+#        105000 ps - default                  -    INFO - v_iv_array( 1 ) = 31FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+#        105000 ps - default                  -    INFO - v_a1_o_array( 1 ) = DC7B5BDFAD343D6A557D937EB3074E17
+#        105000 ps - default                  -    INFO - v_a2_o_array( 1 ) = B699C39EDF4FCD3BD04E05FE1AF45A52
+#        105000 ps - default                  -    INFO - v_a3_o_array( 1 ) = 80E2E74DC257427A61AE0AC7B6EF68FA
+#        105000 ps - default                  -    INFO - ----------------------------------------------------------------
+#        105000 ps - default                  -    INFO - v_iv_array( 2 ) = 32FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+#        105000 ps - default                  -    INFO - v_a1_o_array( 2 ) = 7878EA8BBBC52CE9C92C58B3CED51CCC
+#        105000 ps - default                  -    INFO - v_a2_o_array( 2 ) = B0E56816658D97E2990B4DCAAE60DA30
+#        105000 ps - default                  -    INFO - v_a3_o_array( 2 ) = 6D2375DDCD833D32BEF572EDBAED18E1
+#        105000 ps - default                  -    INFO - ----------------------------------------------------------------
+#        105000 ps - default                  -    INFO - v_iv_array( 3 ) = 33FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+#        105000 ps - default                  -    INFO - v_a1_o_array( 3 ) = F1F617785067EEE0E5CBC3DFBC2F04A6
+#        105000 ps - default                  -    INFO - v_a2_o_array( 3 ) = C49C80A777D9A9E65F5023D031C3B087
+#        105000 ps - default                  -    INFO - v_a3_o_array( 3 ) = 9F9963AB67A926D62BCB982C247C1B18
+#        105000 ps - default                  -    INFO - ----------------------------------------------------------------
+#        105000 ps - default                  -    INFO - v_xor_result = 2F8B1B4AC7B491FEF83CDDD7A2DED52A34B6C49C0AF57C2C81D07832354BE3C66A767D69F5041D570E3D448CE2B6D1BF
+#        105000 ps - default                  -    INFO - v_a1_i | key_1 = 2F8B1B4AC7B491FEF83CDDD7A2DED52A
+#        105000 ps - default                  -    INFO - v_a2_i | key_0 = 34B6C49C0AF57C2C81D07832354BE3C6
+#        105000 ps - default                  -    INFO - v_a3_i | iv    = 6A767D69F5041D570E3D448CE2B6D1BF
+#        105000 ps - default                  -    INFO - a1_o = FE7B0380B5E67B49A52BADBF4E4C6547
+#        105000 ps - default                  -    INFO - a2_o = 4B0AE3858F6E458F72804BB7BFCDA598
+#        105000 ps - default                  -    INFO - a3_o = CF00E6D423428E9750694BB3FA593A89
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+number of ad bytes : 16*7
+
+#        105000 ps - default                  -    INFO - a1_i | key_1   = FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+#        105000 ps - default                  -    INFO - a2_i | key_0   = FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+#        105000 ps - default                  -    INFO - a3_i | iv      = FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+#        105000 ps - default                  -    INFO - m_i  | message = FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF80030000000000000000000000000000
+#        105000 ps - default                  -    INFO - ****************************************************************
+#        105000 ps - default                  -    INFO - v_iv_array( 0 ) = 30FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+#        105000 ps - default                  -    INFO - v_a1_o_array( 0 ) = A5009B05F0F6C9D147859DFC0B56677B
+#        105000 ps - default                  -    INFO - v_a2_o_array( 0 ) = D6643D80102BCDE62927519244A578B9
+#        105000 ps - default                  -    INFO - v_a3_o_array( 0 ) = 2FFFDC09774A7553B1D5485BA60850FA
+#        105000 ps - default                  -    INFO - ----------------------------------------------------------------
+#        105000 ps - default                  -    INFO - v_iv_array( 1 ) = 31FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+#        105000 ps - default                  -    INFO - v_a1_o_array( 1 ) = 373F2F60E0EA2BB9BE25AEAA364C0FDE
+#        105000 ps - default                  -    INFO - v_a2_o_array( 1 ) = 37005C17ADFDB8EA1BC317D6650A6441
+#        105000 ps - default                  -    INFO - v_a3_o_array( 1 ) = DF31C23FE1495EC9B2309417B188E1EA
+#        105000 ps - default                  -    INFO - ----------------------------------------------------------------
+#        105000 ps - default                  -    INFO - v_iv_array( 2 ) = 32FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+#        105000 ps - default                  -    INFO - v_a1_o_array( 2 ) = 54F139E6DA0986FE91B2CC4010497A2A
+#        105000 ps - default                  -    INFO - v_a2_o_array( 2 ) = E6ACF870B5CEA697F4EDEA18D21854FB
+#        105000 ps - default                  -    INFO - v_a3_o_array( 2 ) = DBB7A3282628B6583B7E27AC98F234D2
+#        105000 ps - default                  -    INFO - ----------------------------------------------------------------
+#        105000 ps - default                  -    INFO - v_iv_array( 3 ) = 33FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+#        105000 ps - default                  -    INFO - v_a1_o_array( 3 ) = 197B050C7CBA95DAC254277BC6E88F02
+#        105000 ps - default                  -    INFO - v_a2_o_array( 3 ) = 81FA941B726BB5039388D65C74B82A04
+#        105000 ps - default                  -    INFO - v_a3_o_array( 3 ) = 7C4FA03A105BB3D60D415F95DA24E431
+#        105000 ps - default                  -    INFO - ----------------------------------------------------------------
+#        105000 ps - default                  -    INFO - v_xor_result = DFB5888FB6AFF14CAA46D86DEBBB9D8D86320DFC7A73669855817A00870F620757361D24A0702E1435DAA475555661F3
+#        105000 ps - default                  -    INFO - v_a1_i | key_1 = DFB5888FB6AFF14CAA46D86DEBBB9D8D
+#        105000 ps - default                  -    INFO - v_a2_i | key_0 = 86320DFC7A73669855817A00870F6207
+#        105000 ps - default                  -    INFO - v_a3_i | iv    = 57361D24A0702E1435DAA475555661F3
+#        105000 ps - default                  -    INFO - a1_o = 874C850F4D70C6A8C31A088225AD89A2
+#        105000 ps - default                  -    INFO - a2_o = 4719C2B7B8FE57ACCAABB315A09B5665
+#        105000 ps - default                  -    INFO - a3_o = E556BDC9C2415D6C613D61EE28962D92
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+number of ad bytes : 16*8
+
+#        105000 ps - default                  -    INFO - a1_i | key_1   = FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+#        105000 ps - default                  -    INFO - a2_i | key_0   = FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+#        105000 ps - default                  -    INFO - a3_i | iv      = FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+#        105000 ps - default                  -    INFO - m_i  | message = FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+#        105000 ps - default                  -    INFO - ****************************************************************
+#        105000 ps - default                  -    INFO - v_iv_array( 0 ) = 30FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+#        105000 ps - default                  -    INFO - v_a1_o_array( 0 ) = D77D8DC4D67E909BBCD82282CDFEEA64
+#        105000 ps - default                  -    INFO - v_a2_o_array( 0 ) = B5B54970516F471CE5A5C3E15ED3EDEB
+#        105000 ps - default                  -    INFO - v_a3_o_array( 0 ) = 02C6D7F9D89F6A699C348451059A9C7F
+#        105000 ps - default                  -    INFO - ----------------------------------------------------------------
+#        105000 ps - default                  -    INFO - v_iv_array( 1 ) = 31FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+#        105000 ps - default                  -    INFO - v_a1_o_array( 1 ) = C8CCD16A183147172B442EF5697E0604
+#        105000 ps - default                  -    INFO - v_a2_o_array( 1 ) = D2D90FD6161797D9C8FB7D28B3374170
+#        105000 ps - default                  -    INFO - v_a3_o_array( 1 ) = 851AB032D943993FFBD3E400ADE3A00D
+#        105000 ps - default                  -    INFO - ----------------------------------------------------------------
+#        105000 ps - default                  -    INFO - v_iv_array( 2 ) = 32FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+#        105000 ps - default                  -    INFO - v_a1_o_array( 2 ) = 01BFE02F922D10DA88385F9E552DC1C0
+#        105000 ps - default                  -    INFO - v_a2_o_array( 2 ) = 67C803085E54C934D920743974630C7F
+#        105000 ps - default                  -    INFO - v_a3_o_array( 2 ) = 2ED12CF84EA6F2562C6C8421F9A0271F
+#        105000 ps - default                  -    INFO - ----------------------------------------------------------------
+#        105000 ps - default                  -    INFO - v_iv_array( 3 ) = 33FFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+#        105000 ps - default                  -    INFO - v_a1_o_array( 3 ) = 5293F8C8C2B2EB938ED4221085B33F4F
+#        105000 ps - default                  -    INFO - v_a2_o_array( 3 ) = 0313861C52DDA8250B8C05FCE4C7B310
+#        105000 ps - default                  -    INFO - v_a3_o_array( 3 ) = FD558A868B428CB5AF022CAC7CBAC747
+#        105000 ps - default                  -    INFO - ----------------------------------------------------------------
+#        105000 ps - default                  -    INFO - v_xor_result = 4C9D44499ED02CC5917071F9741E12EF03B7C3B24BF1B1D4FFF2CF0C7D4013F45458C1B5C4388DB5E489C8DC2D63DC2A
+#        105000 ps - default                  -    INFO - v_a1_i | key_1 = 4C9D44499ED02CC5917071F9741E12EF
+#        105000 ps - default                  -    INFO - v_a2_i | key_0 = 03B7C3B24BF1B1D4FFF2CF0C7D4013F4
+#        105000 ps - default                  -    INFO - v_a3_i | iv    = 5458C1B5C4388DB5E489C8DC2D63DC2A
+#        105000 ps - default                  -    INFO - a1_o = 1208EF08E418D0FED2A83E9CDD1C006C
+#        105000 ps - default                  -    INFO - a2_o = 7ADA5ACC5D7109C680DAA111730E511B
+#        105000 ps - default                  -    INFO - a3_o = 4E918935520DD0E1CDBC2462512758A2

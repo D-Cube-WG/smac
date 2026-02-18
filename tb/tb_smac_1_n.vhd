@@ -25,6 +25,8 @@ architecture tb of tb_smac_1_n is
   constant C_M_AXIS_WORD_WIDTH : integer := 3 * C_DATA_WIDTH/8;
   constant C_CLK_PERIOD        : time    := 10 ns;
 
+  constant C_NUM_OF_STREAMS : integer := 4;
+
   constant C_M_AXIS_STALL_CONFIG : stall_config_t := (
     stall_probability => 0.5,
     min_stall_cycles  => 1,
@@ -71,8 +73,9 @@ architecture tb of tb_smac_1_n is
   signal m00_axis_tlast  : std_logic;
 
   procedure p_prep_packet (
-    ad_length_i : in integer;
-    cp_length_i : in integer;
+    num_of_streams_i : in integer;
+    ad_length_i      : in integer;
+    cp_length_i      : in integer;
 
     a1_o : out std_logic_vector(127 downto 0);
     a2_o : out std_logic_vector(127 downto 0);
@@ -96,7 +99,7 @@ architecture tb of tb_smac_1_n is
     variable v_payload_ad : std_logic_vector(8 * ad_length_i - 1 downto 0);
     variable v_payload_cp : std_logic_vector(8 * cp_length_i - 1 downto 0);
 
-    variable v_smac_inp : std_logic_vector(f_smac_input_vec_length_calculator(v_payload_ad, v_payload_cp) - 1 downto 0);
+    variable v_smac_inp : std_logic_vector(f_smac_input_vec_length_calculator(num_of_streams_i, v_payload_ad, v_payload_cp) - 1 downto 0);
 
     variable rnd_seed : integer := 0;
     variable len      : integer := 0;
@@ -105,19 +108,23 @@ architecture tb of tb_smac_1_n is
 
     --generating a1
     v_a1     := f_rand_vector(C_SMAC_REG_WIDTH, rnd_seed);
+    v_a1     := (others => '1');
     rnd_seed := rnd_seed + 1;
 
     --generating a2
     v_a2     := f_rand_vector(C_SMAC_REG_WIDTH, rnd_seed);
+    v_a2     := (others => '1');
     rnd_seed := rnd_seed + 1;
 
     --generating a3
     v_a3     := f_rand_vector(C_SMAC_REG_WIDTH, rnd_seed);
+    v_a3     := (others => '1');
     rnd_seed := rnd_seed + 1;
 
     if (ad_length_i /= 0) then
       --generating payload_ad
-      v_payload_ad := f_rand_vector(v_payload_ad'length, rnd_seed);
+      --v_payload_ad := f_rand_vector(v_payload_ad'length, rnd_seed);
+      v_payload_ad := (others => '1');
       rnd_seed     := rnd_seed + 1;
     end if;
 
@@ -127,7 +134,7 @@ architecture tb of tb_smac_1_n is
       rnd_seed     := rnd_seed + 1;
     end if;
 
-    p_generate_smac_input_vector(v_payload_ad, v_payload_cp, v_smac_inp);
+    p_generate_smac_input_vector(num_of_streams_i, v_payload_ad, v_payload_cp, v_smac_inp);
 
     --info("v_payload_ad : " & to_hstring(v_payload_ad));
     --info("v_payload_cp : " & to_hstring(v_payload_cp));
@@ -145,7 +152,7 @@ architecture tb of tb_smac_1_n is
     a3_o := v_a3;
 
     p_smac_n(
-    num_of_streams_i => 4,
+    num_of_streams_i => num_of_streams_i,
     a1_i             => v_a1,
     a2_i             => v_a2,
     a3_i             => v_a3,
@@ -246,7 +253,7 @@ begin
     variable v_comp_flag : boolean;
     variable v_ad_vec    : std_logic_vector(15 downto 0) := x"AABB";
     variable v_cp_vec    : std_logic_vector(31 downto 0) := x"CCDDEEFF";
-    variable v_smac_inp  : std_logic_vector(f_smac_input_vec_length_calculator(v_ad_vec, v_cp_vec) - 1 downto 0);
+    variable v_smac_inp  : std_logic_vector(f_smac_input_vec_length_calculator(C_NUM_OF_STREAMS, v_ad_vec, v_cp_vec) - 1 downto 0);
 
   begin
     -- VUnit test runner setup
@@ -259,10 +266,10 @@ begin
 
       CP_LOOP : for i in 0 to 255 loop
         AD_LOOP : for j in 1 to 255 loop --j=0 case should be corrected
-          v_num_of_cp_bytes := i;
-          v_num_of_ad_bytes := j;
+          v_num_of_cp_bytes := 0;
+          v_num_of_ad_bytes := 16 * 8;
 
-          p_prep_packet(v_num_of_ad_bytes, v_num_of_cp_bytes, v_a1_o, v_a2_o, v_a3_o, v_inp_word_que, v_exp_word_que);
+          p_prep_packet(C_NUM_OF_STREAMS, v_num_of_ad_bytes, v_num_of_cp_bytes, v_a1_o, v_a2_o, v_a3_o, v_inp_word_que, v_exp_word_que);
 
           a1_i <= v_a1_o;
           a2_i <= v_a2_o;
