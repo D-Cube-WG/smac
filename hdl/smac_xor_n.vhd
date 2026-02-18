@@ -11,7 +11,7 @@ use ieee.numeric_std.all;
 entity smac_xor_n is
     generic (
         G_DATA_WIDTH    : integer := 128;
-        G_NUM_OF_INPUTS : integer := 4
+        G_NUM_OF_INPUTS : integer := 16
     );
     port (
         --clk_i   :  in std_logic; --! Future Work: If there is critical path problem!  

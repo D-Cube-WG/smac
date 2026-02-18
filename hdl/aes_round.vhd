@@ -23,7 +23,7 @@ architecture behavioral of aes_round is
     signal m_out    :  std_logic_vector (127 downto 0); --! Output of mix_columns layer
 	
     -- constants --
-    constant C_IS_LOOKUP : boolean := False;  --! Use lookup table implementation
+    constant C_IS_LOOKUP : boolean := True;  --! Use lookup table implementation
     
 begin
 

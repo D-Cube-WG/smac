@@ -38,23 +38,8 @@ architecture rtl of smac_pi is
 
 begin
 
-    --TODO: Combinational SMAC PI implementation
-    --! Use smac_perm instance here.
-    --! Use two aes_round instances here.
-
-    U_XOR : entity work.smac_xor_3
-        port map(
-            --clk_i   :  in std_logic; --! Future Work: If there is critical path problem!  
-            --rstn_i  :  in std_logic; --! Future Work: If there is critical path problem!  
-            --vld_i   :  in std_logic; --! Future Work: If there is critical path problem!  
-            --vld_o   : out std_logic; --! Future Work: If there is critical path problem!  
-            in0_i => a2_i,
-            in1_i => a3_i,
-            in2_i => message_i,
-
-            xor_o => l_xor_o
-        );
-
+    l_xor_o <= a2_i xor a3_i xor message_i;
+    
     U_SMAC_PERM : entity work.smac_perm
         generic map(
             G_SMAC_VARIANT => G_SMAC_VARIANT --! 1: SMAC-1 , 2: SMAC-1/2 , 3: SMAC-3/4
