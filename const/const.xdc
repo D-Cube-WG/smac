@@ -1,0 +1,1 @@
+create_clock -period 3.0 [get_ports clk_i]
