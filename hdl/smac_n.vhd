@@ -98,7 +98,7 @@ begin
     ------------------------------------------------------------------
     -- PI LAYER
     ------------------------------------------------------------------
-    inst_smac_n_pi : entity work.smac_N_pi
+    inst_smac_n_pi : entity work.smac_n_pi
         generic map (
             G_SMAC_VARIANT   => G_SMAC_VARIANT,
             G_NUM_OF_STREAMS => G_NUM_OF_STREAMS

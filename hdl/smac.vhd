@@ -82,7 +82,7 @@ begin
     -- The rest will be the actual data to be processed. 
     -- After all data is processed, the tag will be output on m00_axis_tdata_o.
 
-    -- Use only ONE smac_N_pi and ONE smac_xor_3 instance here.
+    -- Use only ONE smac_n_pi and ONE smac_xor_3 instance here.
 
     --! Use appropriate FSM to control the data flow.
     --! --> ST_SMAC_INIT, 
