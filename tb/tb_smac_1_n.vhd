@@ -62,6 +62,8 @@ architecture tb of tb_smac_1_n is
   signal a2_i : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
   signal a3_i : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
 
+  signal key_i : std_logic_vector(2 * C_SMAC_REG_WIDTH - 1 downto 0);
+
   signal s00_axis_tdata  : std_logic_vector(C_DATA_WIDTH - 1 downto 0);
   signal s00_axis_tvalid : std_logic;
   signal s00_axis_tready : std_logic;
@@ -71,6 +73,8 @@ architecture tb of tb_smac_1_n is
   signal m00_axis_tvalid : std_logic;
   signal m00_axis_tready : std_logic;
   signal m00_axis_tlast  : std_logic;
+
+  signal start_i  : std_logic;
 
   procedure p_prep_packet (
     num_of_streams_i : in integer;
@@ -258,7 +262,6 @@ begin
   begin
     -- VUnit test runner setup
     test_runner_setup(runner, runner_cfg);
-
     wait until rstn = '1';
     wait until rising_edge(clk);
 
@@ -333,31 +336,29 @@ begin
   end process;
 
   -- DUT instantiation
-  DUT_SMAC : entity work.smac_1_n
+  DUT_SMAC : entity work.smac_n
     generic map(
-      G_DATA_WIDTH          => C_DATA_WIDTH,                  --! Data width in bits
-      G_SMAC_VARIANT        => 1,                             --! 1: SMAC-1 , 2: SMAC-1/2 , 3: SMAC-3/4
-      G_NUM_OF_STREAMS      => C_DATA_WIDTH/C_SMAC_REG_WIDTH, --! Number of parallel SMAC streams
-      G_NUM_OF_INIT_ROUNDS  => 9,
-      G_NUM_OF_FINAL_ROUNDS => 6
+      G_SMAC_VARIANT   => 1,
+      G_NUM_OF_STREAMS => C_NUM_OF_STREAMS
     )
     port map(
       clk_i  => clk,
       rstn_i => rstn,
 
-      a1_i => a1_i,
-      a2_i => a2_i,
-      a3_i => a3_i,
+      start_i => start_i,
 
-      s_axis_tdata_i  => s00_axis_tdata,
-      s_axis_tvalid_i => s00_axis_tvalid,
-      s_axis_tready_o => s00_axis_tready,
-      s_axis_tlast_i  => s00_axis_tlast,
+      key_i => key_i,
+      iv_i  => a3_i,
 
-      m_axis_tdata_o  => m00_axis_tdata,
-      m_axis_tvalid_o => m00_axis_tvalid,
-      m_axis_tready_i => m00_axis_tready,
-      m_axis_tlast_o  => m00_axis_tlast --! Always '1' when tvalid is '1', since tag is single word.
+      s00_axis_tdata_i  => s00_axis_tdata,
+      s00_axis_tvalid_i => s00_axis_tvalid,
+      s00_axis_tlast_i  => s00_axis_tlast,
+      s00_axis_tready_o => s00_axis_tready,
+
+      m00_axis_tdata_o  => m00_axis_tdata,
+      m00_axis_tvalid_o => m00_axis_tvalid,
+      m00_axis_tlast_o  => m00_axis_tlast,
+      m00_axis_tready_i => m00_axis_tready
     );
 
   axi_stream_master_inst : entity vunit_lib.axi_stream_master
@@ -385,5 +386,8 @@ begin
       tready   => m00_axis_tready,
       tlast    => m00_axis_tlast
     );
+
+  start_i <= s00_axis_tvalid;
+  key_i <= a1_i & a2_i;
 
 end architecture;

@@ -122,7 +122,7 @@ begin
     gen_key_in : for i in 0 to G_NUM_OF_STREAMS - 1 generate
         s_init(s_init'high-(i*384)     downto s_init'length-(i*384)-128) <= key(255 downto 128);
         s_init(s_init'high-(i*384)-128 downto s_init'length-(i*384)-256) <= key(127 downto 0);
-        s_init(s_init'high-(i*384)-256 downto s_init'length-(i*384)-260) <= std_logic_vector(to_unsigned(G_NUM_OF_STREAMS, 4));
+        s_init(s_init'high-(i*384)-256 downto s_init'length-(i*384)-260) <= std_logic_vector(to_unsigned(G_NUM_OF_STREAMS-1, 4));
         s_init(s_init'high-(i*384)-260 downto s_init'length-(i*384)-264) <= std_logic_vector(to_unsigned(i, 4));
         s_init(s_init'high-(i*384)-264 downto s_init'length-(i*384)-384) <= iv(119 downto 0);
     end generate;
