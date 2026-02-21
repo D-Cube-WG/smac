@@ -223,7 +223,7 @@ begin
             ------------------------------------------------------------------
             when ST_SMAC_WAIT4XOR =>
                 counter <= counter + 1;
-                if counter = 2 then --two cycle delayed xor output
+                if counter = 2 then --two cycle delayed xor output ---!!!!! buranin N'e gore degismesi gerekebilir. 2 degeri n=4 icin
                     counter <= (others=>'0');
                     s_in    <= (others=>'0');
                     s_in(383 downto 0) <= xor_o;
