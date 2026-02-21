@@ -83,14 +83,15 @@ begin
 
         wait until rstn_i = '1';
         wait for 20 ns;
+        wait until rising_edge(clk_i);
 
         --------------------------------------------------------------
         -- SET KEY / IV
         --------------------------------------------------------------
-        key_i <= x"000102030405060708090A0B0C0D0E0F" &
-                 x"101112131415161718191A1B1C1D1E1F";
-
-        iv_i  <= x"00112233445566778899AABBCCDDEEFF";
+        key_i <= x"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" &
+                 x"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+        iv_i  <= x"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+        wait until rising_edge(clk_i);
 
         --------------------------------------------------------------
         -- START
@@ -108,14 +109,19 @@ begin
         -- SEND 3 MESSAGE BLOCKS
         --------------------------------------------------------------
         for blk in 0 to 2 loop
-
-            data_word :=
-                std_logic_vector(to_unsigned(blk+1,128)) &
-                std_logic_vector(to_unsigned(blk+2,128)) &
-                std_logic_vector(to_unsigned(blk+3,128)) &
-                std_logic_vector(to_unsigned(blk+4,128));
-
-            s00_axis_tdata_i  <= data_word;
+            -- Build data_word with G_NUM_OF_STREAMS 128-bit chunks
+            -- data_word := (others => '0');
+            -- for stream in 0 to G_NUM_OF_STREAMS - 1 loop
+            --     data_word((stream + 1) * 128 - 1 downto stream * 128) :=
+            --         std_logic_vector(to_unsigned(blk * G_NUM_OF_STREAMS + stream + 1, 128));
+            -- end loop;
+            -- s00_axis_tdata_i  <= data_word;
+            if blk = 0 then
+                s00_axis_tdata_i  <= x"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+            else 
+                s00_axis_tdata_i  <= x"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF0003000000000000000000000000000000000000000000000000000000000000";
+            end if;
+            
             s00_axis_tvalid_i <= '1';
 
             if blk = 2 then
@@ -124,9 +130,11 @@ begin
                 s00_axis_tlast_i <= '0';
             end if;
 
-            -- Wait until accepted
             wait until rising_edge(clk_i);
-            wait until s00_axis_tready_o = '1';
+        -- Wait until accepted
+            while (s00_axis_tready_o = '0') loop
+                wait until rising_edge(clk_i);
+            end loop;
 
         end loop;
 
@@ -150,7 +158,7 @@ begin
         --------------------------------------------------------------
         -- PRINT TAG
         --------------------------------------------------------------
-        report "SMAC TAG = " & to_hstring(m00_axis_tdata_o);
+        --report "SMAC TAG = " & to_hstring(m00_axis_tdata_o);
 
         --------------------------------------------------------------
         -- WAIT & FINISH

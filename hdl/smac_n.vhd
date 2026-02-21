@@ -48,6 +48,7 @@ architecture rtl of smac_n is
         ST_SMAC_INIT,
         ST_SMAC_COMPRESSION,
         ST_SMAC_FINALIZE_1,
+        ST_SMAC_WAIT4XOR,
         ST_SMAC_FINALIZE_2,
         ST_SEND_SMAC_RESULT
     );
@@ -61,6 +62,7 @@ architecture rtl of smac_n is
     signal s_in   : std_logic_vector(G_NUM_OF_STREAMS*384-1 downto 0);
     signal s_out  : std_logic_vector(G_NUM_OF_STREAMS*384-1 downto 0);
     signal s_init : std_logic_vector(G_NUM_OF_STREAMS*384-1 downto 0);
+    signal s_init_reg : std_logic_vector(G_NUM_OF_STREAMS*384-1 downto 0);
 
     signal k_in       : std_logic_vector(G_NUM_OF_STREAMS*128-1 downto 0);
     signal one_star_n : std_logic_vector(G_NUM_OF_STREAMS*128-1 downto 0);
@@ -91,6 +93,8 @@ begin
             G_NUM_OF_INPUTS => G_NUM_OF_STREAMS
         )
         port map (
+            clk_i => clk_i,
+            rstn_i => rstn_i,
             in0_i => s_out,
             xor_o => xor_o
         );
@@ -120,11 +124,11 @@ begin
     -- Generate Initial State
     ------------------------------------------------------------------
     gen_key_in : for i in 0 to G_NUM_OF_STREAMS - 1 generate
-        s_init(s_init'high-(i*384)     downto s_init'length-(i*384)-128) <= key(255 downto 128);
-        s_init(s_init'high-(i*384)-128 downto s_init'length-(i*384)-256) <= key(127 downto 0);
+        s_init(s_init'high-(i*384)     downto s_init'length-(i*384)-128) <= key_i(255 downto 128);
+        s_init(s_init'high-(i*384)-128 downto s_init'length-(i*384)-256) <= key_i(127 downto 0);
         s_init(s_init'high-(i*384)-256 downto s_init'length-(i*384)-260) <= std_logic_vector(to_unsigned(G_NUM_OF_STREAMS-1, 4));
         s_init(s_init'high-(i*384)-260 downto s_init'length-(i*384)-264) <= std_logic_vector(to_unsigned(i, 4));
-        s_init(s_init'high-(i*384)-264 downto s_init'length-(i*384)-384) <= iv(119 downto 0);
+        s_init(s_init'high-(i*384)-264 downto s_init'length-(i*384)-384) <= iv_i(119 downto 0);
     end generate;
 
     ------------------------------------------------------------------
@@ -150,9 +154,9 @@ begin
             key               <= (others=>'0');
             iv                <= (others=>'0');
             tag_reg           <= (others=>'0');
+            xor_o_reg         <= (others=>'0');
             tag_valid         <= '0';
             s00_axis_tready_o <= '0';
-
         elsif rising_edge(clk_i) then
 
             -- defaults
@@ -165,37 +169,35 @@ begin
                 tag_valid <= '0';
 
                 if start_i = '1' then
-                    key     <= key_i;
-                    iv      <= iv_i;
-                    counter <= (others=>'0');
-                    state   <= ST_SMAC_INIT;
+                    key         <= key_i;
+                    iv          <= iv_i;
+                    counter     <= (others=>'0');
+                    s_in        <= s_init;   -- first cycle after key/iv  
+                    k_in        <= one_star_n;
+                    s_init_reg  <= s_init;
+                    state       <= ST_SMAC_INIT;
                 end if;
 
             ------------------------------------------------------------------
             when ST_SMAC_INIT =>
                 k_in <= one_star_n;
-
-                if counter = 0 then
-                    s_in <= s_init;   -- first cycle after key/iv latched
-                else
-                    s_in <= s_out;
-                end if;
+                s_in <= s_out;
 
                 counter <= counter + 1;
 
                 if counter = 8 then   -- 9 clocks
                     counter <= (others=>'0');
                     state   <= ST_SMAC_COMPRESSION;
-                    s_in    <= s_out xor s_init;
+                    s_in    <= s_out xor s_init_reg;
                 end if;
 
             ------------------------------------------------------------------
             when ST_SMAC_COMPRESSION =>
                 s00_axis_tready_o <= '1';
                 s_in <= s_out;
-                k_in <= s00_axis_tdata_i;
 
                 if input_fire = '1' then
+                    k_in <= s00_axis_tdata_i;
                     if s00_axis_tlast_i = '1' then
                         counter <= (others=>'0');
                         state   <= ST_SMAC_FINALIZE_1;
@@ -207,15 +209,20 @@ begin
                 k_in <= one_star_n;
                 s_in <= s_out;
                 counter <= counter + 1;
-
                 if counter = 5 then  -- 6 clocks
                     counter <= (others=>'0');
-                    xor_o_reg <= xor_o;
-                    s_in <= (others=>'0');
+                    state <= ST_SMAC_WAIT4XOR;
+                end if;
+            ------------------------------------------------------------------
+            when ST_SMAC_WAIT4XOR =>
+                counter <= counter + 1;
+                if counter = 1 then --two cycle delayed xor output
+                    counter <= (others=>'0');
+                    s_in    <= (others=>'0');
                     s_in(383 downto 0) <= xor_o;
+                    xor_o_reg <= xor_o;
                     state <= ST_SMAC_FINALIZE_2;
                 end if;
-
             ------------------------------------------------------------------
             when ST_SMAC_FINALIZE_2 =>
                 k_in <= one_star_n;

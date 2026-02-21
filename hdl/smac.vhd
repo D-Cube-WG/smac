@@ -42,7 +42,8 @@ architecture rtl of smac is
     -- constant declarations
     constant C_REG_WIDTH : integer := 128;
 
-    constant C_ONE_STAR : std_logic_vector(C_REG_WIDTH - 1 downto 0) := (C_REG_WIDTH - 1 downto C_REG_WIDTH - 8 => x"01", others => '0');
+    --constant C_ONE_STAR : std_logic_vector(C_REG_WIDTH - 1 downto 0) := (C_REG_WIDTH - 1 downto C_REG_WIDTH - 8 => x"01", others => '0');
+    constant C_ONE_STAR : std_logic_vector(127 downto 0) := x"01" & (119 downto 0 => '0');
 
     -- type declarations
     type t_states is (ST_IDLE, ST_SMAC_INIT, ST_SMAC_COMPRESSION, ST_SMAC_FINALIZE, ST_SEND_SMAC_RESULT);

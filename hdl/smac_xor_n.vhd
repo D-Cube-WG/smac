@@ -14,33 +14,51 @@ entity smac_xor_n is
         G_NUM_OF_INPUTS : integer := 16
     );
     port (
-        --clk_i   :  in std_logic; --! Future Work: If there is critical path problem!  
-        --rstn_i  :  in std_logic; --! Future Work: If there is critical path problem!  
-        --vld_i   :  in std_logic; --! Future Work: If there is critical path problem!  
-        --vld_o   : out std_logic; --! Future Work: If there is critical path problem!  
-        in0_i : in std_logic_vector(G_DATA_WIDTH * G_NUM_OF_INPUTS - 1 downto 0);
-
-        xor_o : out std_logic_vector(G_DATA_WIDTH - 1 downto 0)
+        clk_i   :  in std_logic;
+        rstn_i  :  in std_logic;
+        in0_i   :  in std_logic_vector(G_DATA_WIDTH * G_NUM_OF_INPUTS - 1 downto 0);
+        xor_o   : out std_logic_vector(G_DATA_WIDTH - 1 downto 0) --! two cycle delayed
     );
 end entity smac_xor_n;
 
 architecture rtl of smac_xor_n is
+    -- Input registers
+    signal in_data_reg : std_logic_vector(G_DATA_WIDTH * G_NUM_OF_INPUTS - 1 downto 0);
+
+    -- Combinatorial XOR result
+    signal xor_result : std_logic_vector(G_DATA_WIDTH - 1 downto 0);
+
 begin
 
-    -- Combinatorial process to XOR the sub-vectors
-    process (in0_i)
+    -- Input register stage
+    process (clk_i, rstn_i)
+    begin
+        if rstn_i = '0' then
+            in_data_reg <= (others => '0');
+        elsif rising_edge(clk_i) then
+            in_data_reg <= in0_i;
+        end if;
+    end process;
+
+    -- Combinatorial XOR of all registered inputs
+    process (in_data_reg)
         variable v_xor_result : std_logic_vector(G_DATA_WIDTH - 1 downto 0);
     begin
-        -- Initialize the variable with the first segment of the input
-        v_xor_result := in0_i(G_DATA_WIDTH - 1 downto 0);
-
-        -- Loop through the remaining segments (from 1 to G_NUM_OF_INPUTS - 1)
+        v_xor_result := in_data_reg(G_DATA_WIDTH - 1 downto 0);
         for i in 1 to G_NUM_OF_INPUTS - 1 loop
-            v_xor_result := v_xor_result xor in0_i((i + 1) * G_DATA_WIDTH - 1 downto i * G_DATA_WIDTH);
+            v_xor_result := v_xor_result xor in_data_reg((i + 1) * G_DATA_WIDTH - 1 downto i * G_DATA_WIDTH);
         end loop;
+        xor_result <= v_xor_result;
+    end process;
 
-        -- Assign the final accumulated result to the output
-        xor_o <= v_xor_result;
+    -- Output register stage
+    process (clk_i, rstn_i)
+    begin
+        if rstn_i = '0' then
+            xor_o <= (others => '0');
+        elsif rising_edge(clk_i) then
+            xor_o <= xor_result;
+        end if;
     end process;
 
 end architecture rtl;
