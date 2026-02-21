@@ -160,8 +160,6 @@ begin
         elsif rising_edge(clk_i) then
 
             -- defaults
-            s00_axis_tready_o <= '0';
-
             case state is
 
             ------------------------------------------------------------------
@@ -186,19 +184,28 @@ begin
                 counter <= counter + 1;
 
                 if counter = 8 then   -- 9 clocks
+                    s_in    <= s_out xor s_init_reg;
+                    k_in    <= s00_axis_tdata_i; --assuming we have valid data at this cycle
+                    
+                    --burada tlast kontrol edilmeli cunku onceki cycle'da ready verdik
+                    if(s00_axis_tlast_i = '1') then
+                        s00_axis_tready_o <= '0';
+                    end if;
+
                     counter <= (others=>'0');
                     state   <= ST_SMAC_COMPRESSION;
-                    s_in    <= s_out xor s_init_reg;
+                elsif counter = 7 then
+                    s00_axis_tready_o <= '1';
                 end if;
 
             ------------------------------------------------------------------
             when ST_SMAC_COMPRESSION =>
-                s00_axis_tready_o <= '1';
                 s_in <= s_out;
 
                 if input_fire = '1' then
                     k_in <= s00_axis_tdata_i;
                     if s00_axis_tlast_i = '1' then
+                        s00_axis_tready_o <= '0';
                         counter <= (others=>'0');
                         state   <= ST_SMAC_FINALIZE_1;
                     end if;
@@ -216,7 +223,7 @@ begin
             ------------------------------------------------------------------
             when ST_SMAC_WAIT4XOR =>
                 counter <= counter + 1;
-                if counter = 1 then --two cycle delayed xor output
+                if counter = 2 then --two cycle delayed xor output
                     counter <= (others=>'0');
                     s_in    <= (others=>'0');
                     s_in(383 downto 0) <= xor_o;
@@ -229,7 +236,7 @@ begin
                 s_in <= s_out;
                 counter <= counter + 1;
 
-                if counter = 8 then  -- 9 clocks
+                if counter = 7 then  -- 8 clocks
                     counter <= (others=>'0');
                     state   <= ST_SEND_SMAC_RESULT;
                 end if;

@@ -299,6 +299,8 @@ begin
 
           if (v_comp_flag = FALSE) then
             report "COMPARISON FALSE" severity ERROR;
+          else
+            report "Success.";
           end if;
         end loop AD_LOOP;
       end loop CP_LOOP;

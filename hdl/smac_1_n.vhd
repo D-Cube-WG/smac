@@ -162,8 +162,8 @@ begin
             G_NUM_OF_INPUTS => G_NUM_OF_STREAMS
         )
         port map(
-            --clk_i   :  in std_logic; --! Future Work: If there is critical path problem!  
-            --rstn_i  :  in std_logic; --! Future Work: If there is critical path problem!  
+            clk_i  => clk_i,  --! Future Work: If there is critical path problem!  
+            rstn_i => rstn_i, --! Future Work: If there is critical path problem!  
             --vld_i   :  in std_logic; --! Future Work: If there is critical path problem!  
             --vld_o   : out std_logic; --! Future Work: If there is critical path problem!  
             in0_i => r_m_axis_tdata_o,

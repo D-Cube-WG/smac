@@ -65,7 +65,8 @@ package pkg_smac is
         a3_i                : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         a1_o                : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         a2_o                : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        a3_o                : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
+        a3_o                : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        xor_with_input_en_i : in integer := 1
     );
 
     procedure p_compression_phase(
@@ -225,11 +226,12 @@ package body pkg_smac is
         a2_o                : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         a3_o                : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
     ) is begin
-        --info("INPUT COMPRESSION FUNC | a1_i : " & to_hstring(a1_i) & " | a2_i : " & to_hstring(a2_i) & " | a3_i : " & to_hstring(a3_i) & " | m_i : " & to_hstring(m_i));
+        info("INPUT COMPRESSION FUNC  | a1_i : " & to_hstring(a1_i) & " | a2_i : " & to_hstring(a2_i) & " | a3_i : " & to_hstring(a3_i) & " | m_i : " & to_hstring(m_i));
         a1_o := f_smac_permutation(permutation_array_i, a2_i xor a3_i xor m_i);
         a2_o := f_aes_round(a1_i, m_i);
         a3_o := f_aes_round(a2_i, m_i);
-        --info("OUTPUT COMPRESSION FUNC | a1_o : " & to_hstring(a1_o) & " | a2_o : " & to_hstring(a2_o) & " | a3_o : " & to_hstring(a3_o));
+        info("OUTPUT COMPRESSION FUNC | a1_o : " & to_hstring(a1_o) & " | a2_o : " & to_hstring(a2_o) & " | a3_o : " & to_hstring(a3_o));
+        info(" -----           ");
     end procedure p_smac_compression;
 
     procedure p_init_phase(
@@ -240,7 +242,8 @@ package body pkg_smac is
         a3_i                : in std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         a1_o                : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         a2_o                : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
-        a3_o                : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0)
+        a3_o                : out std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+        xor_with_input_en_i : in integer := 1
     ) is
         variable v_a1_i : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         variable v_a2_i : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
@@ -262,9 +265,16 @@ package body pkg_smac is
             v_a2_i := v_a2_o;
             v_a3_i := v_a3_o;
         end loop;
-        a1_o := a1_i xor v_a1_i;
-        a2_o := a2_i xor v_a2_i;
-        a3_o := a3_i xor v_a3_i;
+
+        if (xor_with_input_en_i = 1) then
+            a1_o := a1_i xor v_a1_i;
+            a2_o := a2_i xor v_a2_i;
+            a3_o := a3_i xor v_a3_i;
+        else
+            a1_o := v_a1_i;
+            a2_o := v_a2_i;
+            a3_o := v_a3_i;
+        end if;
         --info("AFTER INIT/FINAL        | a1 : " & to_hstring(a1_o) & " | a2 : " & to_hstring(a2_o) & " | a3 : " & to_hstring(a3_o));
     end procedure p_init_phase;
 
@@ -293,9 +303,9 @@ package body pkg_smac is
         v_a1_i := a1_i;
         v_a2_i := a2_i;
         v_a3_i := a3_i;
-
-        --info("BEFORE COMPRESSION PHASE | a1 : " & to_hstring(v_a1_i) & " | a2 : " & to_hstring(v_a2_i) & " | a3 : " & to_hstring(v_a3_i));
-        --info("BEFORE COMPRESSION PHASE | ad : " & to_hstring(ad_i) & " | cp : " & to_hstring(cp_i));
+        info("     /////     ");
+        info("BEFORE COMPRESSION PHASE | a1 : " & to_hstring(v_a1_i) & " | a2 : " & to_hstring(v_a2_i) & " | a3 : " & to_hstring(v_a3_i));
+        info("BEFORE COMPRESSION PHASE | m_i : " & to_hstring(m_i));
         for i in 0 to v_num_of_blocks - 1 loop
             v_m_block := m_i(m_i'left - i * C_SMAC_REG_WIDTH downto m_i'length - (i + 1) * C_SMAC_REG_WIDTH);
             --info("v_m_block_ad  : " & to_hstring(v_m_block));
@@ -321,7 +331,9 @@ package body pkg_smac is
         a1_o := v_a1_o;
         a2_o := v_a2_o;
         a3_o := v_a3_o;
-        --info("AFTER COMPRESSION PHASE | a1 : " & to_hstring(a1_o) & " | a2 : " & to_hstring(a2_o) & " | a3 : " & to_hstring(a3_o));
+        info("AFTER COMPRESSION PHASE | a1 : " & to_hstring(a1_o) & " | a2 : " & to_hstring(a2_o) & " | a3 : " & to_hstring(a3_o));
+        info("     /////     ");
+
     end procedure p_compression_phase;
 
     procedure p_smac_1(
@@ -456,6 +468,11 @@ package body pkg_smac is
         variable v_a1_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         variable v_a2_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
         variable v_a3_o : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+
+        variable v_block_size             : integer := num_of_streams_i * C_SMAC_REG_WIDTH; --size in bits
+        variable v_message_blocks_per_row : std_logic_vector(m_i'length/v_block_size * C_SMAC_REG_WIDTH - 1 downto 0);
+
+        constant C_LIMIT_FOR_APPENDING_DUMMY_ROUND : integer := 0; --this constant is used for appending 1* into the compression phase. 0:dont append any dummy rounds
     begin
 
         info("a1_i | key_1   = " & to_hstring(a1_i));
@@ -470,19 +487,31 @@ package body pkg_smac is
             v_iv_array(i) := v_iv_msb & a3_i(C_SMAC_REG_WIDTH - 8 - 1 downto 0);
             info("v_iv_array( " & to_string(i) & " ) = " & to_hstring(v_iv_array(i)));
 
-            p_smac_1(
-            init_phase_rounds_i  => 9,
-            final_phase_rounds_i => 6,
+            for j in 0 to m_i'length/v_block_size - 1 loop
+                v_message_blocks_per_row := v_message_blocks_per_row(v_message_blocks_per_row'left - C_SMAC_REG_WIDTH downto 0)
+                    & m_i(m_i'left - j * v_block_size - i * C_SMAC_REG_WIDTH downto m_i'length - j * v_block_size - (i + 1) * C_SMAC_REG_WIDTH);
+            end loop;
 
-            a1_i => a1_i,
-            a2_i => a2_i,
-            a3_i => v_iv_array(i),
-            m_i  => m_i,
+            info("v_message_blocks_per_row = " & to_hstring(v_message_blocks_per_row));
 
-            a1_o => v_a1_o_array(i),
-            a2_o => v_a2_o_array(i),
-            a3_o => v_a3_o_array(i)
-            );
+            p_init_phase(C_PERMUTATION_ARRAY_1, 9, a1_i, a2_i, v_iv_array(i), v_a1_o, v_a2_o, v_a3_o);
+
+            v_a1_i := v_a1_o;
+            v_a2_i := v_a2_o;
+            v_a3_i := v_a3_o;
+
+            p_compression_phase(C_PERMUTATION_ARRAY_1, C_LIMIT_FOR_APPENDING_DUMMY_ROUND,
+            v_a1_i, v_a2_i, v_a3_i, v_message_blocks_per_row,
+            v_a1_o, v_a2_o, v_a3_o);
+
+            v_a1_i := v_a1_o;
+            v_a2_i := v_a2_o;
+            v_a3_i := v_a3_o;
+
+            p_init_phase(C_PERMUTATION_ARRAY_1, 6, v_a1_i, v_a2_i, v_a3_i, v_a1_o, v_a2_o, v_a3_o, 0);
+            v_a1_o_array(i) := v_a1_o;
+            v_a2_o_array(i) := v_a2_o;
+            v_a3_o_array(i) := v_a3_o;
 
             info("v_a1_o_array( " & to_string(i) & " ) = " & to_hstring(v_a1_o_array(i)));
             info("v_a2_o_array( " & to_string(i) & " ) = " & to_hstring(v_a2_o_array(i)));

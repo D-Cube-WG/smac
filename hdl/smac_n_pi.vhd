@@ -45,14 +45,14 @@ begin
                 G_SMAC_VARIANT => G_SMAC_VARIANT
             )
             port map (
-                a1_i      => state_i(C_LOW + 127 downto C_LOW),
+                a1_i      => state_i(C_LOW + 383 downto C_LOW + 256),
                 a2_i      => state_i(C_LOW + 255 downto C_LOW + 128),
-                a3_i      => state_i(C_LOW + 383 downto C_LOW + 256),
+                a3_i      => state_i(C_LOW + 127 downto C_LOW),
                 message_i => key_i(i*128 + 127 downto i*128),
 
-                a1_o => state_o(C_LOW + 127 downto C_LOW),
+                a1_o => state_o(C_LOW + 383 downto C_LOW + 256),
                 a2_o => state_o(C_LOW + 255 downto C_LOW + 128),
-                a3_o => state_o(C_LOW + 383 downto C_LOW + 256)
+                a3_o => state_o(C_LOW + 127 downto C_LOW)
             );
 
     end generate gen_smac_pi;
