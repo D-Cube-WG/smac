@@ -19,22 +19,22 @@ end tb_smac_1_n;
 
 architecture tb of tb_smac_1_n is
   --constant declarations
-  constant C_DATA_WIDTH        : integer := 4 * C_SMAC_REG_WIDTH;
+  constant C_NUM_OF_STREAMS    : integer := 4;
+  constant C_IS_SMAC_N         : integer := 1;
+  constant C_DATA_WIDTH        : integer := C_NUM_OF_STREAMS * C_SMAC_REG_WIDTH;
   constant C_WORD_WIDTH        : integer := C_DATA_WIDTH/8;
   constant C_M_AXIS_DATA_WIDTH : integer := 3 * C_SMAC_REG_WIDTH;
   constant C_M_AXIS_WORD_WIDTH : integer := 3 * C_DATA_WIDTH/8;
   constant C_CLK_PERIOD        : time    := 10 ns;
 
-  constant C_NUM_OF_STREAMS : integer := 4;
-
   constant C_M_AXIS_STALL_CONFIG : stall_config_t := (
-    stall_probability => 0.5,
+    stall_probability => 0.0,
     min_stall_cycles  => 1,
     max_stall_cycles  => 4
   );
 
   constant C_S_AXIS_STALL_CONFIG : stall_config_t := (
-    stall_probability => 1.0,
+    stall_probability => 0.0,
     min_stall_cycles  => 1,
     max_stall_cycles  => 4
   );
@@ -74,9 +74,11 @@ architecture tb of tb_smac_1_n is
   signal m00_axis_tready : std_logic;
   signal m00_axis_tlast  : std_logic;
 
-  signal start_i  : std_logic;
+  signal start_i : std_logic;
 
-  procedure p_prep_packet (
+  procedure p_prep_smac_n_packet (
+    rnd_seed_i : in integer;
+
     num_of_streams_i : in integer;
     ad_length_i      : in integer;
     cp_length_i      : in integer;
@@ -109,26 +111,23 @@ architecture tb of tb_smac_1_n is
     variable len      : integer := 0;
 
   begin
+    rnd_seed := rnd_seed + rnd_seed_i;
 
     --generating a1
     v_a1     := f_rand_vector(C_SMAC_REG_WIDTH, rnd_seed);
-    v_a1     := (others => '1');
     rnd_seed := rnd_seed + 1;
 
     --generating a2
     v_a2     := f_rand_vector(C_SMAC_REG_WIDTH, rnd_seed);
-    v_a2     := (others => '1');
     rnd_seed := rnd_seed + 1;
 
     --generating a3
     v_a3     := f_rand_vector(C_SMAC_REG_WIDTH, rnd_seed);
-    v_a3     := (others => '1');
     rnd_seed := rnd_seed + 1;
 
     if (ad_length_i /= 0) then
       --generating payload_ad
-      --v_payload_ad := f_rand_vector(v_payload_ad'length, rnd_seed);
-      v_payload_ad := (others => '1');
+      v_payload_ad := f_rand_vector(v_payload_ad'length, rnd_seed);
       rnd_seed     := rnd_seed + 1;
     end if;
 
@@ -179,7 +178,111 @@ architecture tb of tb_smac_1_n is
 
     expected_packet_o := f_byte_to_axis(v_byte_queue_exp, C_M_AXIS_DATA_WIDTH/8);
 
-  end procedure p_prep_packet;
+  end procedure p_prep_smac_n_packet;
+
+  procedure p_prep_smac_1_packet (
+    rnd_seed_i : in integer;
+
+    ad_length_i : in integer;
+    cp_length_i : in integer;
+
+    a1_o : out std_logic_vector(127 downto 0);
+    a2_o : out std_logic_vector(127 downto 0);
+    a3_o : out std_logic_vector(127 downto 0);
+
+    generated_packet_o : out queue_t;
+    expected_packet_o  : out queue_t
+  ) is
+    variable v_byte_queue     : queue_t := new_queue;
+    variable v_byte_queue_exp : queue_t := new_queue;
+
+    variable v_a1     : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v_a2     : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v_a3     : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v_a1_o   : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v_a2_o   : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v_a3_o   : std_logic_vector(C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v_result : std_logic_vector(3 * C_SMAC_REG_WIDTH - 1 downto 0);
+    variable v8       : std_logic_vector(7 downto 0);
+
+    variable v_payload_ad : std_logic_vector(8 * ad_length_i - 1 downto 0);
+    variable v_payload_cp : std_logic_vector(8 * cp_length_i - 1 downto 0);
+
+    variable v_smac_inp : std_logic_vector(f_smac_input_vec_length_calculator(1, v_payload_ad, v_payload_cp) - 1 downto 0);
+
+    variable rnd_seed : integer := 0;
+    variable len      : integer := 0;
+
+  begin
+    rnd_seed := rnd_seed + rnd_seed_i;
+
+    --generating a1
+    v_a1     := f_rand_vector(C_SMAC_REG_WIDTH, rnd_seed);
+    rnd_seed := rnd_seed + 1;
+
+    --generating a2
+    v_a2     := f_rand_vector(C_SMAC_REG_WIDTH, rnd_seed);
+    rnd_seed := rnd_seed + 1;
+
+    --generating a3
+    v_a3     := f_rand_vector(C_SMAC_REG_WIDTH, rnd_seed);
+    rnd_seed := rnd_seed + 1;
+
+    if (ad_length_i /= 0) then
+      --generating payload_ad
+      v_payload_ad := f_rand_vector(v_payload_ad'length, rnd_seed);
+      rnd_seed     := rnd_seed + 1;
+    end if;
+
+    if (cp_length_i /= 0) then
+      --generating payload_cp
+      v_payload_cp := f_rand_vector(v_payload_cp'length, rnd_seed);
+      rnd_seed     := rnd_seed + 1;
+    end if;
+
+    p_generate_smac_input_vector(1, v_payload_ad, v_payload_cp, v_smac_inp);
+
+    --info("v_payload_ad : " & to_hstring(v_payload_ad));
+    --info("v_payload_cp : " & to_hstring(v_payload_cp));
+    --info("v_smac_inp   : " & to_hstring(v_smac_inp));
+
+    for i in 0 to v_smac_inp'length/8 - 1 loop
+      v8 := v_smac_inp(v_smac_inp'left - 8 * i downto v_smac_inp'length - 8 * (i + 1));
+      push_std_ulogic_vector(v_byte_queue, v8);
+      len := len + 1;
+      --info("m v8 : " & to_hstring(v8));
+    end loop;
+
+    a1_o := v_a1;
+    a2_o := v_a2;
+    a3_o := v_a3;
+
+    p_smac_1(
+    init_phase_rounds_i  => 9,
+    final_phase_rounds_i => 9,
+    a1_i                 => v_a1,
+    a2_i                 => v_a2,
+    a3_i                 => v_a3,
+    m_i                  => v_smac_inp, --message
+    a1_o                 => v_a1_o,
+    a2_o                 => v_a2_o,
+    a3_o                 => v_a3_o
+    );
+
+    --generating
+    generated_packet_o := f_byte_to_axis(v_byte_queue, C_WORD_WIDTH);
+
+    --generating
+    v_result := v_a1_o & v_a2_o & v_a3_o;
+    for i in 0 to v_result'length/8 - 1 loop
+      v8 := v_result(v_result'left - 8 * i downto v_result'length - 8 * (i + 1));
+      push_std_ulogic_vector(v_byte_queue_exp, v8);
+      --info("v8 : " & to_hstring(v8));
+    end loop;
+
+    expected_packet_o := f_byte_to_axis(v_byte_queue_exp, C_M_AXIS_DATA_WIDTH/8);
+
+  end procedure p_prep_smac_1_packet;
 
   signal r_received_queue : queue_t := new_queue;
 
@@ -255,9 +358,6 @@ begin
     variable v_num_of_cp_bytes : integer;
 
     variable v_comp_flag : boolean;
-    variable v_ad_vec    : std_logic_vector(15 downto 0) := x"AABB";
-    variable v_cp_vec    : std_logic_vector(31 downto 0) := x"CCDDEEFF";
-    variable v_smac_inp  : std_logic_vector(f_smac_input_vec_length_calculator(C_NUM_OF_STREAMS, v_ad_vec, v_cp_vec) - 1 downto 0);
 
   begin
     -- VUnit test runner setup
@@ -265,14 +365,14 @@ begin
     wait until rstn = '1';
     wait until rising_edge(clk);
 
-    if run("test_0") then
+    if run("test_smac_n") then
 
-      CP_LOOP : for i in 0 to 255 loop
-        AD_LOOP : for j in 1 to 255 loop --j=0 case should be corrected
-          v_num_of_cp_bytes := 0;
-          v_num_of_ad_bytes := 16 * 8;
+      CP_LOOP_1 : for i in 0 to 1024 loop
+        AD_LOOP_1 : for j in 1 to 1024 loop --j=0 case should be corrected
+          v_num_of_cp_bytes := i;
+          v_num_of_ad_bytes := j;
 
-          p_prep_packet(C_NUM_OF_STREAMS, v_num_of_ad_bytes, v_num_of_cp_bytes, v_a1_o, v_a2_o, v_a3_o, v_inp_word_que, v_exp_word_que);
+          p_prep_smac_n_packet(i + j, C_NUM_OF_STREAMS, v_num_of_ad_bytes, v_num_of_cp_bytes, v_a1_o, v_a2_o, v_a3_o, v_inp_word_que, v_exp_word_que);
 
           a1_i <= v_a1_o;
           a2_i <= v_a2_o;
@@ -302,8 +402,8 @@ begin
           else
             report "Success.";
           end if;
-        end loop AD_LOOP;
-      end loop CP_LOOP;
+        end loop AD_LOOP_1;
+      end loop CP_LOOP_1;
       wait for 100 * C_CLK_PERIOD;
 
     end if;
@@ -341,7 +441,8 @@ begin
   DUT_SMAC : entity work.smac_n
     generic map(
       G_SMAC_VARIANT   => 1,
-      G_NUM_OF_STREAMS => C_NUM_OF_STREAMS
+      G_NUM_OF_STREAMS => C_NUM_OF_STREAMS,
+      G_IS_SMAC_N      => C_IS_SMAC_N
     )
     port map(
       clk_i  => clk,
@@ -390,6 +491,6 @@ begin
     );
 
   start_i <= s00_axis_tvalid;
-  key_i <= a1_i & a2_i;
+  key_i   <= a1_i & a2_i;
 
 end architecture;

@@ -191,6 +191,10 @@ package body pkg_smac is
         v_cp_len_vector := f_swap_bytes(std_logic_vector(to_unsigned(cp_i'length, C_SMAC_REG_WIDTH/2)));
         v_len_vector    := v_ad_len_vector & v_cp_len_vector;
 
+        info("v_ad_len_vector : " & to_hstring(v_ad_len_vector));
+        info("v_cp_len_vector : " & to_hstring(v_cp_len_vector));
+        info("v_len_vector : " & to_hstring(v_len_vector));
+
         if (ad_i'length > 0) then
             v_vec := v_vec(v_vec'length - ad_i'length - 1 downto 0) & ad_i;
 
@@ -303,9 +307,9 @@ package body pkg_smac is
         v_a1_i := a1_i;
         v_a2_i := a2_i;
         v_a3_i := a3_i;
-        info("     /////     ");
-        info("BEFORE COMPRESSION PHASE | a1 : " & to_hstring(v_a1_i) & " | a2 : " & to_hstring(v_a2_i) & " | a3 : " & to_hstring(v_a3_i));
-        info("BEFORE COMPRESSION PHASE | m_i : " & to_hstring(m_i));
+        --info("     /////     ");
+        --info("BEFORE COMPRESSION PHASE | a1 : " & to_hstring(v_a1_i) & " | a2 : " & to_hstring(v_a2_i) & " | a3 : " & to_hstring(v_a3_i));
+        --info("BEFORE COMPRESSION PHASE | m_i : " & to_hstring(m_i));
         for i in 0 to v_num_of_blocks - 1 loop
             v_m_block := m_i(m_i'left - i * C_SMAC_REG_WIDTH downto m_i'length - (i + 1) * C_SMAC_REG_WIDTH);
             --info("v_m_block_ad  : " & to_hstring(v_m_block));
@@ -331,8 +335,8 @@ package body pkg_smac is
         a1_o := v_a1_o;
         a2_o := v_a2_o;
         a3_o := v_a3_o;
-        info("AFTER COMPRESSION PHASE | a1 : " & to_hstring(a1_o) & " | a2 : " & to_hstring(a2_o) & " | a3 : " & to_hstring(a3_o));
-        info("     /////     ");
+        --info("AFTER COMPRESSION PHASE | a1 : " & to_hstring(a1_o) & " | a2 : " & to_hstring(a2_o) & " | a3 : " & to_hstring(a3_o));
+        --info("     /////     ");
 
     end procedure p_compression_phase;
 
