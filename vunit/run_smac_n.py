@@ -2,12 +2,28 @@
 from pathlib import Path
 from vunit import VUnit
 
+OPEN_GUI = True
+CLEAN_OUTPUTS = False
+NON_GUI_THREADS = 2
+
+argv = {"*"}
+argv.add("--fail-fast")
+
+if OPEN_GUI:
+    argv.add("--gui")
+else:
+    argv.add("-p " + str(NON_GUI_THREADS))
+    argv.add("--exit-0")
+
+if CLEAN_OUTPUTS:
+    argv.add("--clean")
+
 # ROOT points to dummy_prj (one folder above vunit/)
 ROOT = Path(__file__).resolve().parent.parent
 print("ROOT folder:", ROOT)
 
 # Start VUnit
-vu = VUnit.from_argv()
+vu = VUnit.from_argv(argv)
 print("VUnit started")
 
 # Add the built-in VUnit library first

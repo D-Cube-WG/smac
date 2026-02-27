@@ -84,6 +84,8 @@ architecture rtl of smac_n is
 
     signal key : std_logic_vector(255 downto 0);
     signal iv  : std_logic_vector(127 downto 0);
+    
+    signal s00_axis_tready : std_logic;
 
     ------------------------------------------------------------------
     -- AXI
@@ -146,8 +148,10 @@ begin
     ------------------------------------------------------------------
     -- AXI COMBINATIONAL
     ------------------------------------------------------------------
-    input_fire  <= s00_axis_tvalid_i and s00_axis_tready_o;
+    input_fire  <= s00_axis_tvalid_i and s00_axis_tready;
     output_fire <= tag_valid and m00_axis_tready_i;
+    
+    s00_axis_tready_o <= s00_axis_tready;
 
     m00_axis_tdata_o  <= tag_reg;
     m00_axis_tvalid_o <= tag_valid;
@@ -168,7 +172,7 @@ begin
             tag_reg           <= (others => '0');
             xor_o_reg         <= (others => '0');
             tag_valid         <= '0';
-            s00_axis_tready_o <= '0';
+            s00_axis_tready   <= '0';
         elsif rising_edge(clk_i) then
 
             -- defaults
@@ -204,13 +208,13 @@ begin
                         --burada tlast kontrol edilmeli cunku onceki cycle'da ready verdik
                         if (s00_axis_tlast_i = '1') then
                             state             <= ST_SMAC_FINALIZE_1;
-                            s00_axis_tready_o <= '0';
+                            s00_axis_tready   <= '0';
                         else
                             state <= ST_SMAC_COMPRESSION;
                         end if;
 
                     elsif counter = 7 then
-                        s00_axis_tready_o <= '1';
+                        s00_axis_tready   <= '1';
                     end if;
 
                     ------------------------------------------------------------------
@@ -220,7 +224,7 @@ begin
                     if input_fire = '1' then
                         k_in <= s00_axis_tdata_i;
                         if s00_axis_tlast_i = '1' then
-                            s00_axis_tready_o <= '0';
+                            s00_axis_tready <= '0';
                             if (G_IS_SMAC_N = 0) then
                                 state <= ST_SMAC_FINALIZE_2;
                             else

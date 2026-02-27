@@ -5,7 +5,8 @@ use ieee.numeric_std.all;
 entity smac_n_wrapper is
     generic (
         G_SMAC_VARIANT   : integer := 1;
-        G_NUM_OF_STREAMS : integer := 16
+        G_NUM_OF_STREAMS : integer := 16;
+        G_IS_SMAC_N      : integer := 1
     );
     port (
         clk_i  : in std_logic;
@@ -74,6 +75,9 @@ architecture rtl of smac_n_wrapper is
     signal tag_shift   : std_logic_vector(383 downto 0);
     signal tag_cnt     : unsigned(4 downto 0);
     signal tag_valid   : std_logic;
+    
+    
+    signal m_axis_tvalid   : std_logic;
 
 begin
 
@@ -83,7 +87,8 @@ begin
     inst_smac : entity work.smac_n
         generic map (
             G_SMAC_VARIANT   => G_SMAC_VARIANT,
-            G_NUM_OF_STREAMS => G_NUM_OF_STREAMS
+            G_NUM_OF_STREAMS => G_NUM_OF_STREAMS,
+            G_IS_SMAC_N      => G_IS_SMAC_N
         )
         port map (
             clk_i  => clk_i,
@@ -191,7 +196,7 @@ begin
             if tag_valid='1' then
                 tag_shift <= tag_full;
                 tag_cnt   <= (others=>'0');
-            elsif m_axis_tready_i='1' and m_axis_tvalid_o = '1' then
+            elsif m_axis_tready_i='1' and m_axis_tvalid = '1' then
                 tag_shift <= tag_shift(351 downto 0) & x"00000000";
                 tag_cnt   <= tag_cnt + 1;
             end if;
@@ -200,7 +205,9 @@ begin
     end process;
 
     m_axis_tdata_o  <= tag_shift(383 downto 352);
-    m_axis_tvalid_o <= '1' when (tag_cnt < 12) else '0';
+    m_axis_tvalid   <= '1' when (tag_cnt < 12) else '0';
     m_axis_tlast_o  <= '1' when (tag_cnt = 11) else '0';
+    
+    m_axis_tvalid_o <= m_axis_tvalid;
 
 end architecture;
