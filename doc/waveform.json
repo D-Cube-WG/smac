@@ -1,0 +1,19 @@
+{ signal: [
+  { name: "clk_i",      wave: "p............|.........................", data: ["asd"] },
+  { name: "start_i",    wave: "010..........|........................." },
+  { name: "key_i",      wave: "x3...........|.......................x.", data: ["key"] },
+  { name: "iv_i",       wave: "x4...........|.......................x.", data: ["iv"] },
+  {},
+  { name: "s_axis_tdata_i",     wave: "x5...........|..x......................", data: ["data"] },
+  { name: "s_axis_tvalid_i",    wave: "01...........|..0......................"},
+  { name: "s_axis_tlast_i",    wave: "x0...........|.10......................"},
+  { name: "s_axis_tready_o",    wave: "0..........1.|..0......................"},
+  {},
+  { name: "m_axis_tdata_o",     wave: "x............|..x................9...x.", data: ["Tag"] },
+  { name: "m_axis_tvalid_o",    wave: "0............|...................1...0."},
+  { name: "m_axis_tlast_o",    wave: "0............|...................1...0."},
+  { name: "m_axis_tready_i",    wave: "0............|......................10."},
+  {},
+  { name: "State",     wave: "2.3........4.|..5.....6..7.......9...2.",
+  data: ["ST_IDLE", "ST_INIT", "ST_COMPRESSION", "ST_FINALIZE_1", "ST_WAIT4XOR", "ST_FINALIZE_2", "ST_SEND_RESULT", "ST_IDLE"] }
+]}
