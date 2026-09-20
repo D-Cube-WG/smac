@@ -10,7 +10,8 @@ FPGA implementation of SMAC, a recently proposed stand-alone Message Authenticat
 | **Authors** | Ahmet Malal, Hakan Güler, Bahadır Aydoğan, Oğuz Yayla |
 | **Conference** | SECRYPT 2026 (23rd Int'l Conf. on Security and Cryptography) |
 | **Location** | Porto, Portugal |
-| **DOI** | [10.5220/0015062600004103](https://www.scitepress.org/Link.aspx?doi=10.5220/0015062600004103) |
+| **Published** | [10.5220/0015062600004103](https://www.scitepress.org/Link.aspx?doi=10.5220/0015062600004103) |
+| **ePrint** | [2026/1466](https://eprint.iacr.org/2026/1466.pdf) |
 
 ## Abstract
 
